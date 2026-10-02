@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -40,10 +38,10 @@
 namespace {
 using loot::Node;
 
-std::map<std::string, Node *>::iterator insertNode(
-    loot::GraphView *graphView,
-    std::map<std::string, Node *> &map,
-    const std::string &name,
+std::map<std::string, Node*>::iterator insertNode(
+    loot::GraphView* graphView,
+    std::map<std::string, Node*>& map,
+    const std::string& name,
     bool isUserMetadata,
     bool containsInstalledPlugins) {
   auto it = map.find(name);
@@ -61,18 +59,18 @@ std::map<std::string, Node *>::iterator insertNode(
 }
 
 std::map<std::string, QPointF> convertNodePositions(
-    const std::vector<loot::GroupNodePosition> &nodePositions) {
+    const std::vector<loot::GroupNodePosition>& nodePositions) {
   std::map<std::string, QPointF> map;
 
-  for (const auto &position : nodePositions) {
+  for (const auto& position : nodePositions) {
     map.emplace(position.groupName, QPointF(position.x, position.y));
   }
 
   return map;
 }
 
-void setNodePositions(const std::vector<Node *> &nodes,
-                      const std::map<std::string, QPointF> &savedPositions) {
+void setNodePositions(const std::vector<Node*>& nodes,
+                      const std::map<std::string, QPointF>& savedPositions) {
   for (const auto node : nodes) {
     const auto name = node->getName().toStdString();
     const auto positionIt = savedPositions.find(name);
@@ -88,7 +86,7 @@ void setNodePositions(const std::vector<Node *> &nodes,
 }
 
 namespace loot {
-GraphView::GraphView(QWidget *parent) :
+GraphView::GraphView(QWidget* parent) :
     QGraphicsView(parent),
     masterColor(
         QGuiApplication::palette().color(QPalette::Disabled, QPalette::Text)),
@@ -99,7 +97,7 @@ GraphView::GraphView(QWidget *parent) :
   static constexpr qreal INITIAL_SCALING_FACTOR = 0.8;
   static constexpr int MIN_VIEW_SIZE = 400;
 
-  QGraphicsScene *scene = new QGraphicsScene(this);
+  QGraphicsScene* scene = new QGraphicsScene(this);
   scene->setItemIndexMethod(QGraphicsScene::BspTreeIndex);
   setScene(scene);
   setDragMode(QGraphicsView::ScrollHandDrag);
@@ -113,24 +111,24 @@ GraphView::GraphView(QWidget *parent) :
   setBackgroundBrush(QBrush(backgroundColor));
 }
 
-void GraphView::setGroups(const std::vector<Group> &masterlistGroups,
-                          const std::vector<Group> &userGroups,
-                          const std::set<std::string> &installedPluginGroups,
-                          const std::vector<GroupNodePosition> &nodePositions) {
+void GraphView::setGroups(const std::vector<Group>& masterlistGroups,
+                          const std::vector<Group>& userGroups,
+                          const std::set<std::string>& installedPluginGroups,
+                          const std::vector<GroupNodePosition>& nodePositions) {
   // Remove all existing items.
   scene()->clear();
   hasUnsavedLayoutChanges_ = false;
 
   // Now add the given groups.
-  std::map<std::string, Node *> groupNameNodeMap;
+  std::map<std::string, Node*> groupNameNodeMap;
 
-  for (const auto &group : masterlistGroups) {
+  for (const auto& group : masterlistGroups) {
     auto name = group.GetName();
     const auto containsInstalledPlugins = installedPluginGroups.count(name) > 0;
     insertNode(this, groupNameNodeMap, name, false, containsInstalledPlugins);
   }
 
-  for (const auto &group : userGroups) {
+  for (const auto& group : userGroups) {
     auto name = group.GetName();
     const auto containsInstalledPlugins = installedPluginGroups.count(name) > 0;
     insertNode(this, groupNameNodeMap, name, true, containsInstalledPlugins);
@@ -139,8 +137,8 @@ void GraphView::setGroups(const std::vector<Group> &masterlistGroups,
   // Now add edges to represent all the dependencies between groups.
   // A group named in a group's "after" metadata may not exist: if
   // not, add it as a user group.
-  for (const auto &group : masterlistGroups) {
-    for (const auto &groupName : group.GetAfterGroups()) {
+  for (const auto& group : masterlistGroups) {
+    for (const auto& groupName : group.GetAfterGroups()) {
       auto node = groupNameNodeMap.at(group.GetName());
       const auto containsInstalledPlugins =
           installedPluginGroups.count(groupName) > 0;
@@ -152,8 +150,8 @@ void GraphView::setGroups(const std::vector<Group> &masterlistGroups,
     }
   }
 
-  for (const auto &group : userGroups) {
-    for (const auto &groupName : group.GetAfterGroups()) {
+  for (const auto& group : userGroups) {
+    for (const auto& groupName : group.GetAfterGroups()) {
       auto node = groupNameNodeMap.at(group.GetName());
       const auto containsInstalledPlugins =
           installedPluginGroups.count(groupName) > 0;
@@ -169,11 +167,11 @@ void GraphView::setGroups(const std::vector<Group> &masterlistGroups,
   doLayout(nodePositions);
 }
 
-bool GraphView::addGroup(const std::string &name) {
+bool GraphView::addGroup(const std::string& name) {
   auto qName = QString::fromStdString(name);
 
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (node && node->getName() == qName) {
       return false;
     }
@@ -191,12 +189,12 @@ bool GraphView::addGroup(const std::string &name) {
   return true;
 }
 
-void GraphView::renameGroup(const std::string &oldName,
-                            const std::string &newName) {
+void GraphView::renameGroup(const std::string& oldName,
+                            const std::string& newName) {
   auto qOldName = QString::fromStdString(oldName);
 
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (node && node->getName() == qOldName) {
       node->setName(QString::fromStdString(newName));
       return;
@@ -205,12 +203,12 @@ void GraphView::renameGroup(const std::string &oldName,
 }
 
 void GraphView::setGroupContainsInstalledPlugins(
-    const std::string &name,
+    const std::string& name,
     bool containsInstalledPlugins) {
   const auto qName = QString::fromStdString(name);
 
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (!node || node->getName() != qName) {
       continue;
     }
@@ -235,7 +233,7 @@ std::vector<Group> GraphView::getUserGroups() const {
   std::vector<Group> userGroups;
 
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (!node) {
       continue;
     }
@@ -264,7 +262,7 @@ std::vector<GroupNodePosition> GraphView::getNodePositions() const {
   std::vector<GroupNodePosition> nodePositions;
 
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (node) {
       const auto name = node->getName().toStdString();
       const auto scenePos = node->scenePos();
@@ -282,11 +280,11 @@ bool GraphView::hasUnsavedLayoutChanges() const {
   return hasUnsavedLayoutChanges_;
 }
 
-bool GraphView::isUserGroup(const std::string &name) const {
+bool GraphView::isUserGroup(const std::string& name) const {
   auto qName = QString::fromStdString(name);
 
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (node && node->getName() == qName) {
       return node->isUserMetadata();
     }
@@ -295,11 +293,11 @@ bool GraphView::isUserGroup(const std::string &name) const {
   return false;
 }
 
-void GraphView::handleGroupRemoved(const QString &name) {
+void GraphView::handleGroupRemoved(const QString& name) {
   emit groupRemoved(name);
 }
 
-void GraphView::handleGroupSelected(const QString &name) {
+void GraphView::handleGroupSelected(const QString& name) {
   emit groupSelected(name);
 }
 
@@ -315,7 +313,7 @@ void GraphView::setBackgroundColor(QColor color) {
 }
 
 #if QT_CONFIG(wheelevent)
-void GraphView::wheelEvent(QWheelEvent *event) {
+void GraphView::wheelEvent(QWheelEvent* event) {
   static constexpr double ROTATION_SCALING_FACTOR = 30.0 * 8.0;
   static constexpr double BASE_SCALE_FACTOR = 2.0;
   static constexpr double MINIMUM_SCALE = 0.07;
@@ -340,10 +338,10 @@ void GraphView::wheelEvent(QWheelEvent *event) {
 }
 #endif
 
-void GraphView::doLayout(const std::vector<GroupNodePosition> &nodePositions) {
-  std::vector<Node *> nodes;
+void GraphView::doLayout(const std::vector<GroupNodePosition>& nodePositions) {
+  std::vector<Node*> nodes;
   for (const auto item : scene()->items()) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (node) {
       nodes.push_back(node);
     }
@@ -362,7 +360,7 @@ void GraphView::doLayout(const std::vector<GroupNodePosition> &nodePositions) {
       }
 
       return;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       if (logger) {
         logger->warn("Failed to set node positions from stored data: {}",
                      e.what());
@@ -375,7 +373,7 @@ void GraphView::doLayout(const std::vector<GroupNodePosition> &nodePositions) {
   }
 
   const auto calculatedNodePositions = calculateGraphLayout(nodes);
-  for (const auto &[node, position] : calculatedNodePositions) {
+  for (const auto& [node, position] : calculatedNodePositions) {
     if (node == nullptr) {
       throw std::logic_error(
           "calculated node positions map contains a null node pointer");

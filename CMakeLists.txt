@@ -49,17 +49,22 @@ configure_file("${CMAKE_SOURCE_DIR}/src/gui/version.cpp.in"
 # Generate ICO file
 ##############################
 
+set(LOOT_SVG_PATH "${CMAKE_SOURCE_DIR}/resources/icons/loot.svg")
+set(LOOT_ICO_PATH "${CMAKE_SOURCE_DIR}/build/icon/icon.ico")
 if(WIN32)
-    set(LOOT_SVG_PATH "${CMAKE_SOURCE_DIR}/resources/icons/loot.svg")
-    set(LOOT_ICO_PATH "${CMAKE_SOURCE_DIR}/build/icon/icon.ico")
-    add_custom_command(
+    set(LOOT_ICO_SIZES "")
+else()
+    set(LOOT_ICO_SIZES -s 16 -s 256)
+endif()
+
+add_custom_command(
         OUTPUT "${LOOT_ICO_PATH}"
         COMMAND svg_to_ico
-            -i "${LOOT_SVG_PATH}"
-            -o "${LOOT_ICO_PATH}"
+        -i "${LOOT_SVG_PATH}"
+        -o "${LOOT_ICO_PATH}"
+        ${LOOT_ICO_SIZES}
         DEPENDS "${LOOT_SVG_PATH}"
         VERBATIM)
-endif()
 
 ##############################
 # External Projects
@@ -103,7 +108,7 @@ endif()
 find_package(libloot CONFIG)
 if(NOT libloot_FOUND)
     set(LIBLOOT_GIT_REPOSITORY_DEFAULT "https://github.com/loot/libloot.git")
-    set(LIBLOOT_GIT_COMMIT_DEFAULT "d929ab9dabc130f10e4b235c816fa5da3dfa317c")
+    set(LIBLOOT_GIT_COMMIT_DEFAULT "56bafaead362b06aa63e02f8917ffde0777d36ae")
     if(NOT DEFINED LIBLOOT_GIT_REPOSITORY)
         set(LIBLOOT_GIT_REPOSITORY "${LIBLOOT_GIT_REPOSITORY_DEFAULT}")
     endif()
@@ -122,8 +127,8 @@ if(NOT libloot_FOUND)
         if(DEFINED LIBLOOT_URL)
             cmake_path(CONVERT "${LIBLOOT_URL}" TO_CMAKE_PATH_LIST LIBLOOT_URL)
         else()
-            set(LIBLOOT_URL "https://github.com/loot/libloot/releases/download/0.29.2/libloot-0.29.2-win64.7z")
-            set(LIBLOOT_HASH "SHA256=827daf2201bd081e1495570d0d563e2e490138582c0d67325ad6a6d369581203")
+            set(LIBLOOT_URL "https://github.com/loot/libloot/releases/download/0.29.6/libloot-0.29.6-win64.7z")
+            set(LIBLOOT_HASH "SHA256=b5012ff02d6a88f54a18b20aef4536a51c541714b8e218c55558c855fbeeda21")
         endif()
         set(LIBLOOT_DOWNLOAD_ARGS
             URL "${LIBLOOT_URL}"
@@ -135,8 +140,8 @@ if(NOT libloot_FOUND)
     else()
         message(WARNING "Git not found: building libloot from a source archive")
         set(LIBLOOT_DOWNLOAD_ARGS
-            URL "https://github.com/loot/libloot/archive/refs/tags/0.29.2.tar.gz"
-            URL_HASH "SHA256=381ae587662bb9c47696ecdccd7cd0c16ea50493f97075f0705064989ef8f0fa")
+            URL "https://github.com/loot/libloot/archive/refs/tags/0.29.6.tar.gz"
+            URL_HASH "SHA256=ffc89682b0d362ac8569efff8ad6392cd670203f34aeb7e3a0cbebab1700a840")
     endif()
 
     message(DEBUG "LIBLOOT_USE_PREBUILT_MSVC_BINARY: ${LIBLOOT_USE_PREBUILT_MSVC_BINARY}")
@@ -262,6 +267,7 @@ if(NOT OGDF_FOUND)
         CMAKE_ARGS
             -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DOGDF_ARCH=x86-64
         BUILD_COMMAND ${OGDF_BUILD_COMMAND}
         BUILD_BYPRODUCTS
             "<BINARY_DIR>/${OGDF_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}OGDF${OGDF_BASENAME_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}"
@@ -292,6 +298,7 @@ set(LOOT_SRC_GUI_CPP_FILES
     "${CMAKE_SOURCE_DIR}/src/gui/qt/back_up_load_order_dialog.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/card.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/card_delegate.cpp"
+    "${CMAKE_SOURCE_DIR}/src/gui/qt/compare_load_orders_dialog.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/counters.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/filters_widget.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/general_info.cpp"
@@ -323,7 +330,7 @@ set(LOOT_SRC_GUI_CPP_FILES
     "${CMAKE_SOURCE_DIR}/src/gui/qt/plugin_item_model.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/plugin_item_filter_model.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/restore_load_order_dialog.cpp"
-    "${CMAKE_SOURCE_DIR}/src/gui/qt/search_dialog.cpp"
+    "${CMAKE_SOURCE_DIR}/src/gui/qt/search_toolbar.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/settings/game_tab.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/settings/general_tab.cpp"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/settings/new_game_dialog.cpp"
@@ -365,6 +372,7 @@ set(LOOT_SRC_GUI_H_FILES
     "${CMAKE_SOURCE_DIR}/src/gui/qt/back_up_load_order_dialog.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/card.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/card_delegate.h"
+    "${CMAKE_SOURCE_DIR}/src/gui/qt/compare_load_orders_dialog.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/counters.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/filters_states.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/filters_widget.h"
@@ -397,7 +405,7 @@ set(LOOT_SRC_GUI_H_FILES
     "${CMAKE_SOURCE_DIR}/src/gui/qt/plugin_item_model.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/plugin_item_filter_model.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/restore_load_order_dialog.h"
-    "${CMAKE_SOURCE_DIR}/src/gui/qt/search_dialog.h"
+    "${CMAKE_SOURCE_DIR}/src/gui/qt/search_toolbar.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/settings/game_tab.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/settings/general_tab.h"
     "${CMAKE_SOURCE_DIR}/src/gui/qt/settings/new_game_dialog.h"
@@ -466,6 +474,14 @@ if(WIN32)
     list(APPEND LOOT_ALL_SOURCES
         "${CMAKE_SOURCE_DIR}/resources/resources.windows.qrc"
         "${CMAKE_SOURCE_DIR}/src/gui/LOOT.manifest")
+endif()
+
+if(MSVC)
+    # Copy test code coverage config into build directory where MSVC expects to
+    # find it.
+    configure_file("${PROJECT_SOURCE_DIR}/.runsettings"
+        "${PROJECT_BINARY_DIR}/.runsettings"
+        COPYONLY)
 endif()
 
 ##############################

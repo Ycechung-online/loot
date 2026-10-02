@@ -1,26 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_GAME_DETECTION_HEROIC_TEST
 #define LOOT_TESTS_GUI_STATE_GAME_DETECTION_HEROIC_TEST
@@ -47,7 +46,8 @@ TEST(GetHeroicGamesLauncherConfigPaths,
 
   const auto xgConfigHome = getenv("XDG_CONFIG_HOME");
 
-  const auto config = xgConfigHome == nullptr ? home + "/.config" : xgConfigHome;
+  const auto config =
+      xgConfigHome == nullptr ? home + "/.config" : xgConfigHome;
 
   ASSERT_EQ(2, paths.size());
   EXPECT_EQ(config + "/heroic", paths[0].u8string());
@@ -56,10 +56,9 @@ TEST(GetHeroicGamesLauncherConfigPaths,
 }
 #endif
 
-class HeroicTest : public ::testing::Test {
+class HeroicTest : public FilesystemTest {
 public:
   HeroicTest() :
-      rootPath_(getTempPath()),
       gogInstalledPath_(rootPath_ / "gog_store" / "installed.json"),
       egsInstalledPath_(rootPath_ / "legendaryConfig" / "legendary" /
                         "installed.json"),
@@ -67,14 +66,13 @@ public:
 
 protected:
   void SetUp() override {
+    FilesystemTest::SetUp();
+
     std::filesystem::create_directories(gogInstalledPath_.parent_path());
     std::filesystem::create_directories(egsInstalledPath_.parent_path());
     std::filesystem::create_directories(gamesConfigPath_);
   }
 
-  void TearDown() override { std::filesystem::remove_all(rootPath_); }
-
-  std::filesystem::path rootPath_;
   std::filesystem::path gogInstalledPath_;
   std::filesystem::path egsInstalledPath_;
   std::filesystem::path gamesConfigPath_;

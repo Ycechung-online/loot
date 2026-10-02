@@ -1,39 +1,37 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_GAME_DETECTION_DETAIL_TEST
 #define LOOT_TESTS_GUI_STATE_GAME_DETECTION_DETAIL_TEST
 
-#include "gui/state/game/detection/detail.h"
-
 #include <boost/algorithm/string/replace.hpp>
 
+#include "gui/state/game/detection/detail.h"
 #include "tests/common_game_test_fixture.h"
 #include "tests/gui/state/game/detection/test_registry.h"
 
 namespace loot::test {
-static constexpr std::array<InstallSource, 5> ALL_INSTALL_SOURCES = {
+inline constexpr std::array<InstallSource, 5> ALL_INSTALL_SOURCES = {
     InstallSource::steam,
     InstallSource::gog,
     InstallSource::epic,
@@ -72,44 +70,44 @@ TEST_P(GetNameSourceSuffixTest, shouldNotThrowForAnyValidGameId) {
   EXPECT_NO_THROW(getNameSourceSuffix(GetParam()));
 }
 
-class FindGameInstallsTest : public CommonGameTestFixture {
+class FindGameInstallsTest : public FilesystemTest {
 protected:
   FindGameInstallsTest() :
-      CommonGameTestFixture(GameId::tes5se),
-      epicManifestsPath(gamePath.parent_path() / "Manifests"),
-      xboxGamingRootPath(gamePath.parent_path() / "xbox"),
-      genericInstallPath(gamePath),
-      steamInstallPath(gamePath.parent_path() / "steam"),
-      gogInstallPath(gamePath.parent_path() / "gog"),
-      epicInstallPath(gamePath.parent_path() / "epic"),
+      epicManifestsPath(rootPath_ / "Manifests"),
+      xboxGamingRootPath(rootPath_ / "xbox"),
+      genericInstallPath(rootPath_ / "generic"),
+      steamInstallPath(rootPath_ / "steam"),
+      gogInstallPath(rootPath_ / "gog"),
+      epicInstallPath(rootPath_ / "epic"),
       msInstallPath(xboxGamingRootPath /
                     "The Elder Scrolls V- Skyrim Special Edition (PC)" /
                     "Content") {
     // Create generic install.
+    createInstall(genericInstallPath);
     registry.SetStringValue(
         "Software\\Bethesda Softworks\\Skyrim Special Edition",
         genericInstallPath.u8string());
 
     // Create Steam install.
-    copyInstall(steamInstallPath);
+    createInstall(steamInstallPath);
     registry.SetStringValue(
         "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "
         "489830",
         steamInstallPath.u8string());
 
     // Create GOG install.
-    copyInstall(gogInstallPath);
+    createInstall(gogInstallPath);
     registry.SetStringValue("Software\\GOG.com\\Games\\1801825368",
                             gogInstallPath.u8string());
 
     // Create Epic install.
     createEpicManifest();
-    copyInstall(epicInstallPath);
+    createInstall(epicInstallPath);
     registry.SetStringValue("Software\\Epic Games\\EpicGamesLauncher",
                             epicManifestsPath.parent_path().u8string());
 
     // Create MS Store install.
-    copyInstall(msInstallPath);
+    createInstall(msInstallPath);
   }
 
   std::filesystem::path epicManifestsPath;
@@ -136,11 +134,9 @@ private:
     out.close();
   }
 
-  void copyInstall(const std::filesystem::path& destination) {
-    std::filesystem::create_directories(destination.parent_path());
-
-    std::filesystem::copy(
-        gamePath, destination, std::filesystem::copy_options::recursive);
+  void createInstall(const std::filesystem::path& destination) {
+    touch(destination / "Data" / "Skyrim.esm");
+    touch(destination / "SkyrimSE.exe");
   }
 };
 
@@ -461,7 +457,7 @@ TEST(AppendNewGamesSettings,
   EXPECT_EQ("Enderal: Forgotten Stories", gamesSettings[0].getName());
   EXPECT_EQ("Skyrim.esm", gamesSettings[0].getMasterFilename());
   EXPECT_EQ(
-      "https://raw.githubusercontent.com/loot/enderal/v0.26/masterlist.yaml",
+      "https://raw.githubusercontent.com/loot/enderal/v0.29/masterlist.yaml",
       gamesSettings[0].getMasterlistSource());
   EXPECT_EQ(installPath, gamesSettings[0].getGamePath());
   EXPECT_EQ(localPath, gamesSettings[0].getGameLocalPath());
@@ -471,7 +467,7 @@ TEST(AppendNewGamesSettings,
   EXPECT_EQ("Nehrim - At Fate's Edge", gamesSettings[1].getName());
   EXPECT_EQ("Nehrim.esm", gamesSettings[1].getMasterFilename());
   EXPECT_EQ(
-      "https://raw.githubusercontent.com/loot/oblivion/v0.26/masterlist.yaml",
+      "https://raw.githubusercontent.com/loot/oblivion/v0.29/masterlist.yaml",
       gamesSettings[1].getMasterlistSource());
 }
 
@@ -494,16 +490,14 @@ TEST(AppendNewGamesSettings,
   EXPECT_EQ("TES III: Morrowind (2)", gamesSettings[2].getName());
 }
 
-class UpdateInstalledGamesSettingsTest : public CommonGameTestFixture {
+class UpdateInstalledGamesSettingsTest : public FilesystemTest {
 protected:
-  UpdateInstalledGamesSettingsTest() : CommonGameTestFixture(GameId::tes3) {}
-
   void SetUp() override {
-    CommonGameTestFixture::SetUp();
+    FilesystemTest::SetUp();
 
     initialCurrentPath = std::filesystem::current_path();
 
-    const auto lootPath = gamePath / "LOOT";
+    const auto lootPath = rootPath_ / "LOOT";
 
     // Change the current path into a game subfolder.
     std::filesystem::create_directory(lootPath);
@@ -514,7 +508,7 @@ protected:
     // Restore the previous current path.
     std::filesystem::current_path(initialCurrentPath);
 
-    CommonGameTestFixture::TearDown();
+    FilesystemTest::TearDown();
   }
 
 private:
@@ -524,6 +518,8 @@ private:
 #ifdef _WIN32
 TEST_F(UpdateInstalledGamesSettingsTest,
        shouldReturnSettingsForGameInParentOfCurrentDirectory) {
+  touch(rootPath_ / "Data Files" / "Morrowind.esm");
+
   std::vector<GameSettings> gamesSettings;
   updateInstalledGamesSettings(gamesSettings, TestRegistry(), {}, {}, {});
 

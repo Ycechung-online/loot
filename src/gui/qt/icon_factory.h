@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -51,7 +49,12 @@ public:
   static QIcon getSortIcon();
   static QIcon getApplySortIcon();
   static QIcon getDiscardSortIcon();
+  static QIcon getCompareLoadOrdersIcon();
   static QIcon getUpdateMasterlistIcon();
+
+  static QIcon getRegexIcon();
+  static QIcon getNextSearchResultIcon();
+  static QIcon getPreviousSearchResultIcon();
 
   static QIcon getSettingsIcon();
   static QIcon getArchiveIcon();
@@ -72,6 +75,9 @@ public:
   static QIcon getOpenLOOTDataFolderIcon();
   static QIcon getJoinDiscordServerIcon();
   static QIcon getAboutIcon();
+
+  static QIcon getLineAddedIcon();
+  static QIcon getLineRemovedIcon();
 
   // Caches resized pixmaps so that the transformation only needs to be done
   // once per (icon, extent, mode, state) tuple of argument values.

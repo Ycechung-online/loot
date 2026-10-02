@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -38,10 +36,10 @@ static constexpr qreal ARROW_HYPOTENUSE = 10;
 
 class Edge : public QGraphicsItem {
 public:
-  Edge(Node *sourceNode, Node *destNode, bool isUserMetadata);
+  Edge(Node* sourceNode, Node* destNode, bool isUserMetadata);
 
-  Node *getSourceNode() const;
-  Node *getDestNode() const;
+  Node* getSourceNode() const;
+  Node* getDestNode() const;
   bool isUserMetadata() const;
 
   void adjust();
@@ -51,15 +49,15 @@ public:
 
 protected:
   QRectF boundingRect() const override;
-  void paint(QPainter *painter,
-             const QStyleOptionGraphicsItem *option,
-             QWidget *widget) override;
+  void paint(QPainter* painter,
+             const QStyleOptionGraphicsItem* option,
+             QWidget* widget) override;
 
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
-  Node *source{nullptr};
-  Node *dest{nullptr};
+  Node* source{nullptr};
+  Node* dest{nullptr};
 
   QPointF sourcePoint;
   QPointF destPoint;
@@ -69,9 +67,9 @@ private:
 
 QPolygonF createLineWithArrow(QPointF startPos, QPointF endPos);
 
-QColor getDefaultColor(const GraphView &graphView, bool isUserMetadata);
+QColor getDefaultColor(const GraphView& graphView, bool isUserMetadata);
 
-QColor toOpaqueColor(const QColor &color, const QColor &backgroundColor);
+QColor toOpaqueColor(const QColor& color, const QColor& backgroundColor);
 }
 
 #endif

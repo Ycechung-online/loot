@@ -8,14 +8,14 @@ on:
   pull_request:
 
 env:
-  AQTINSTALL_VERSION: 3.3.0
-  BOOST_VERSION: 1.90.0
+  AQTINSTALL_SPECIFIER: git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b
+  BOOST_VERSION: 1.91.0
   BOOST_INSTALL_SCRIPT_VERSION: 2.2.1
-  GETTEXT_VERSION: 0.22.5
-  LIBLOOT_VERSION: 0.29.2
+  GETTEXT_VERSION: v0.26-v1.17
+  LIBLOOT_VERSION: 0.29.6
   OGDF_VERSION: foxglove-202510
   PYTHON_VERSION: 3.14.3
-  QT_VERSION: 6.9.1
+  QT_VERSION: 6.11.1
   SVG_TO_ICO_VERSION: 1.3.1
   UV_VERSION: 0.10.9
 
@@ -30,11 +30,11 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -61,19 +61,19 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: pip cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-aqtinstall-${{ env.AQTINSTALL_VERSION }}
+          key: ${{ runner.os }}-pip-aqtinstall-${{ env.AQTINSTALL_SPECIFIER }}
 
       - name: Get Boost metadata
         id: boost-metadata
@@ -86,7 +86,7 @@ jobs:
 
       - name: Boost cache
         id: boost-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ${{ steps.boost-metadata.outputs.root }}/boost
@@ -95,7 +95,7 @@ jobs:
 
       - name: libloot cache
         id: libloot-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ env.LIBLOOT_INSTALL_PATH }}
           key: ${{ runner.os }}-libloot-${{ env.LIBLOOT_VERSION }}
@@ -109,6 +109,14 @@ jobs:
             libicu-dev \
             libtbb-dev
 
+      - name: Download and extract svg_to_ico
+        run: |
+          wget https://github.com/Ortham/svg_to_ico/releases/download/${SVG_TO_ICO_VERSION}/svg_to_ico.tar.xz
+          sha256sum -c <<< '04897b6384e7c3141c8343335b66bde3b184d7d65940980c38689b3ef4453f2f svg_to_ico.tar.xz'
+          tar -xf svg_to_ico.tar.xz
+
+          echo "${PWD}/svg_to_ico" >> "$GITHUB_PATH"
+
       - name: Download & build Boost
         run: |
           wget https://raw.githubusercontent.com/Ortham/ci-scripts/${BOOST_INSTALL_SCRIPT_VERSION}/install_boost.py
@@ -119,12 +127,12 @@ jobs:
       - name: Download Qt
         id: qt-metadata
         run: |
-          python -m pip install aqtinstall==$AQTINSTALL_VERSION
+          python -m pip install "$AQTINSTALL_SPECIFIER"
           aqt install-qt linux desktop $QT_VERSION linux_gcc_64
           echo "root=${{ github.workspace }}/$QT_VERSION/gcc_64" >> $GITHUB_OUTPUT
 
       - name: Checkout libloot repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: loot/libloot
           ref: ${{ env.LIBLOOT_VERSION }}
@@ -162,21 +170,21 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: flatpak-builder cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/build/.flatpak-builder
           key: ${{ runner.os }}-flatpak-builder-${{ hashFiles('resources/linux/io.github.loot.loot.yml') }}
@@ -247,17 +255,20 @@ jobs:
   windows:
     runs-on: windows-2022
 
+    env:
+      CMAKE_SYSTEM_VERSION: "10.0.17763.0"
+
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: ${{ env.UV_VERSION }}
 
@@ -277,7 +288,7 @@ jobs:
 
       - name: Boost cache
         id: boost-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ${{ steps.boost-metadata.outputs.root }}/boost
@@ -286,14 +297,14 @@ jobs:
 
       - name: libloot cache
         id: libloot-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ env.LIBLOOT_INSTALL_PATH }}
           key: ${{ runner.os }}-libloot-${{ env.LIBLOOT_VERSION }}
 
       - name: OGDF cache
         id: ogdf-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ env.OGDF_INSTALL_PATH }}
           key: ${{ runner.os }}-x64-ogdf-${{ env.OGDF_VERSION }}
@@ -328,6 +339,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" `
             -A x64 `
             -DCMAKE_INSTALL_PREFIX="${env:OGDF_INSTALL_PATH}" `
+            -DCMAKE_SYSTEM_VERSION="${env:CMAKE_SYSTEM_VERSION}" `
             -B $OGDF_BUILD_DIR `
             -S "ogdf-${env:OGDF_VERSION}"
           cmake --build $OGDF_BUILD_DIR --config Release
@@ -337,11 +349,11 @@ jobs:
       - name: Download Qt
         id: qt-metadata
         run: |
-          uv run --with aqtinstall==${env:AQTINSTALL_VERSION} -- aqt install-qt windows desktop ${env:QT_VERSION} win64_msvc2022_64
+          uv run --with ${env:AQTINSTALL_SPECIFIER} -- aqt install-qt windows desktop ${env:QT_VERSION} win64_msvc2022_64
           echo "root=${{ github.workspace }}/${env:QT_VERSION}/msvc2022_64" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Checkout libloot repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: loot/libloot
           ref: ${{ env.LIBLOOT_VERSION }}
@@ -352,10 +364,12 @@ jobs:
         run: |
           $LIBLOOT_BUILD_DIR="libloot-$env:LIBLOOT_VERSION/cpp/build"
 
-          cmake `
+          cmake -G "Visual Studio 17 2022" `
+            -A x64 `
             -DLIBLOOT_BUILD_TESTS=OFF `
             -DLIBLOOT_INSTALL_DOCS=OFF `
             -DCMAKE_INSTALL_PREFIX="$env:LIBLOOT_INSTALL_PATH" `
+            -DCMAKE_SYSTEM_VERSION="${env:CMAKE_SYSTEM_VERSION}" `
             -B "$LIBLOOT_BUILD_DIR" `
             -S "libloot-$env:LIBLOOT_VERSION/cpp"
           cmake --build "$LIBLOOT_BUILD_DIR" --target libloot --config Release
@@ -367,6 +381,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" `
             -A x64 `
             -DCMAKE_PREFIX_PATH="${env:LIBLOOT_INSTALL_PATH};${{ steps.boost-metadata.outputs.root }}\stage" `
+            -DCMAKE_SYSTEM_VERSION="${env:CMAKE_SYSTEM_VERSION}" `
             -DQt6_ROOT="${{ steps.qt-metadata.outputs.root }}" `
             -DOGDF_ROOT="${env:OGDF_INSTALL_PATH}" `
             -B build
@@ -385,8 +400,8 @@ jobs:
       - name: Install Gettext
         run: |
           $filename = scripts\download_file.ps1 `
-            "https://github.com/vslavik/gettext-tools-windows/releases/download/v${env:GETTEXT_VERSION}/gettext-tools-windows-${env:GETTEXT_VERSION}.zip" `
-            '2a49b7c26e91c4f4f3d389067c3d6dda77aee816aee0f36e172d84577311b7da'
+            "https://github.com/mlocati/gettext-iconv-windows/releases/download/${env:GETTEXT_VERSION}/gettext0.26-iconv1.17-shared-64.zip" `
+            'd820cdc8199162377b11e2088143b48f1898050ffd5376d63b05f0dee478e030'
 
           7z x -y -ogettext ".\$filename"
 

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -136,7 +134,15 @@ QJsonObject readJsonObjectFromFile(const std::filesystem::path& path) {
   // the GUI code, but it's not worth jumping through hoops to preserve that.
   auto file = QFile(QString::fromStdString(path.u8string()));
 
-  file.open(QIODevice::ReadOnly | QIODevice::Text);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (logger) {
+      logger->error("Failed to open Heroic file at {} due to error {}: {}",
+                    path.u8string(),
+                    static_cast<int>(file.error()),
+                    file.errorString().toStdString());
+    }
+    return {};
+  }
   const auto content = file.readAll();
   file.close();
 

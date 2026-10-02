@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2022    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -33,18 +31,18 @@
 
 namespace loot {
 namespace test {
-class QtHelpersFixture : public ::testing::Test {
+class QtHelpersFixture : public FilesystemTest {
 protected:
   QtHelpersFixture() :
-      rootPath_(getTempPath()),
       filePath_(rootPath_ / "Blank.esm"),
       fileMetadataPath_(rootPath_ / "Blank.esm.metadata.toml") {}
 
-  void SetUp() override {
-    std::filesystem::create_directories(rootPath_);
+  void createTestFile() {
+    std::filesystem::copy_file(getSourcePluginsPath(GameId::tes5) / "Blank.esm",
+                               filePath_);
+  }
 
-    std::filesystem::copy_file(getSourcePluginsPath(GameId::tes5) / "Blank.esm", filePath_);
-
+  void createTestMetadataFile() {
     std::ofstream out(fileMetadataPath_);
     out << "blob_sha1 = \"686d51d2991e7359e636720c5cb04446257a42af\""
         << std::endl;
@@ -52,9 +50,6 @@ protected:
     out.close();
   }
 
-  void TearDown() override { std::filesystem::remove_all(rootPath_); }
-
-  std::filesystem::path rootPath_;
   std::filesystem::path filePath_;
   std::filesystem::path fileMetadataPath_;
 };
@@ -102,16 +97,21 @@ TEST_F(CalculateGitBlobHashTest, shouldReplaceCRLFWithLFBeforeCalculatingHash) {
 }
 
 TEST_F(GetFileRevisionTest, shouldThrowIfGivenPathIsNotARegularFile) {
+  createTestFile();
+
   EXPECT_THROW(getFileRevision(rootPath_), std::runtime_error);
 }
 
 TEST_F(GetFileRevisionTest,
        shouldThrowIfGivenPathHasNoCorrespondingMetadataFile) {
-  std::filesystem::remove(fileMetadataPath_);
+  createTestFile();
+
   EXPECT_THROW(getFileRevision(filePath_), std::runtime_error);
 }
 
 TEST_F(GetFileRevisionTest, shouldThrowIfMetadataIsMissingHashProperty) {
+  createTestFile();
+
   std::ofstream out(fileMetadataPath_);
   out << "update_timestamp = \"2022-01-22\"";
   out.close();
@@ -120,6 +120,8 @@ TEST_F(GetFileRevisionTest, shouldThrowIfMetadataIsMissingHashProperty) {
 }
 
 TEST_F(GetFileRevisionTest, shouldThrowIfMetadataIsMissingTimestampProperty) {
+  createTestFile();
+
   std::ofstream out(fileMetadataPath_);
   out << "blob_sha1 = \"686d51d2991e7359e636720c5cb04446257a42af\"";
   out.close();
@@ -129,6 +131,9 @@ TEST_F(GetFileRevisionTest, shouldThrowIfMetadataIsMissingTimestampProperty) {
 
 TEST_F(GetFileRevisionTest,
        shouldReturnIsModifiedFalseIfFileHashEqualsRecordedHash) {
+  createTestFile();
+  createTestMetadataFile();
+
   auto revision = getFileRevision(filePath_);
 
   EXPECT_EQ("686d51d2991e7359e636720c5cb04446257a42af", revision.id);
@@ -138,6 +143,8 @@ TEST_F(GetFileRevisionTest,
 
 TEST_F(GetFileRevisionTest,
        shouldReturnIsModifiedTrueIfFileHashDoesNotEqualRecordedHash) {
+  createTestMetadataFile();
+
   std::ofstream out(filePath_);
   out << "";
   out.close();
@@ -150,6 +157,9 @@ TEST_F(GetFileRevisionTest,
 }
 
 TEST_F(GetFileRevisionSummaryTest, shouldReturnTheFileRevisionIfItCanBeRead) {
+  createTestFile();
+  createTestMetadataFile();
+
   auto summary = getFileRevisionSummary(filePath_, FileType::Masterlist);
 
   EXPECT_EQ("686d51d", summary.id);
@@ -157,6 +167,8 @@ TEST_F(GetFileRevisionSummaryTest, shouldReturnTheFileRevisionIfItCanBeRead) {
 }
 
 TEST_F(GetFileRevisionSummaryTest, shouldIndicateIfTheFileHasBeenEdited) {
+  createTestMetadataFile();
+
   std::ofstream out(filePath_);
   out << "";
   out.close();
@@ -185,7 +197,8 @@ TEST_F(GetFileRevisionSummaryTest,
 
 TEST_F(GetFileRevisionSummaryTest,
        shouldDisplayErrorsIfTheMetadataCannotBeRead) {
-  std::filesystem::remove(fileMetadataPath_);
+  createTestFile();
+
   auto summary = getFileRevisionSummary(filePath_, FileType::Masterlist);
 
   EXPECT_EQ("Unknown: No revision metadata found", summary.id);
@@ -193,6 +206,8 @@ TEST_F(GetFileRevisionSummaryTest,
 }
 
 TEST_F(UpdateFileWithDataTest, shouldWriteToFileIfHashesAreDifferent) {
+  createTestFile();
+
   auto originalHash = calculateGitBlobHash(filePath_);
 
   auto data = QByteArray("new data");
@@ -207,8 +222,7 @@ TEST_F(UpdateFileWithDataTest, shouldWriteToFileIfHashesAreDifferent) {
 }
 
 TEST_F(UpdateFileWithDataTest, shouldWriteMetadataFileIfHashesAreDifferent) {
-  std::filesystem::remove(fileMetadataPath_);
-  ASSERT_FALSE(std::filesystem::exists(fileMetadataPath_));
+  createTestFile();
 
   auto data = QByteArray("new data");
   auto dataHash = calculateGitBlobHash(data);
@@ -226,9 +240,6 @@ TEST_F(UpdateFileWithDataTest, shouldWriteMetadataFileIfHashesAreDifferent) {
 }
 
 TEST_F(UpdateFileWithDataTest, shouldWriteMetadataFileEvenIfHashIsUnchanged) {
-  std::filesystem::remove(fileMetadataPath_);
-  ASSERT_FALSE(std::filesystem::exists(fileMetadataPath_));
-
   auto data = QByteArray("new data");
   auto dataHash = calculateGitBlobHash(data);
 
@@ -250,6 +261,8 @@ TEST_F(UpdateFileWithDataTest, shouldWriteMetadataFileEvenIfHashIsUnchanged) {
 
 TEST_F(UpdateFileTest,
        shouldOverwriteDestinationWithSourceIfHashesAreDifferent) {
+  createTestFile();
+
   auto originalHash = calculateGitBlobHash(filePath_);
 
   auto sourceFilePath = rootPath_ / "source";
@@ -269,8 +282,7 @@ TEST_F(UpdateFileTest,
 }
 
 TEST_F(UpdateFileTest, shouldWriteMetadataFileIfHashesAreDifferent) {
-  std::filesystem::remove(fileMetadataPath_);
-  ASSERT_FALSE(std::filesystem::exists(fileMetadataPath_));
+  createTestFile();
 
   auto sourceFilePath = rootPath_ / "source";
 
@@ -293,8 +305,7 @@ TEST_F(UpdateFileTest, shouldWriteMetadataFileIfHashesAreDifferent) {
 }
 
 TEST_F(UpdateFileTest, shouldWriteMetadataFileEvenIfHashIsUnchanged) {
-  std::filesystem::remove(fileMetadataPath_);
-  ASSERT_FALSE(std::filesystem::exists(fileMetadataPath_));
+  createTestFile();
 
   auto sourceFilePath = rootPath_ / "source";
 
@@ -349,9 +360,9 @@ TEST_F(ReadOldMessagesTest, shouldReadOldMessagesFromAJsonFile) {
 
   std::ofstream out(jsonPath);
   out << "{\"messages\":["
-   << "{\"text\":\"general message\"},"
+      << "{\"text\":\"general message\"},"
       << "{\"pluginName\":\"plugin name\",\"text\":\"plugin message\"}"
-   << "]}";
+      << "]}";
   out.close();
 
   std::vector<HiddenMessage> expectedMessages{

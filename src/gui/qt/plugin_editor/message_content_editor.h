@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -38,16 +36,17 @@ namespace loot {
 class MessageContentEditor : public QDialog {
   Q_OBJECT
 public:
-  MessageContentEditor(QWidget *parent,
-                       const std::vector<LootSettings::Language> &languages);
+  MessageContentEditor(QWidget* parent,
+                       const std::vector<LootSettings::Language>& languages);
 
-  void initialiseInputs(std::vector<MessageContent> &&metadata);
+  void initialiseInputs(std::vector<MessageContent>&& metadata);
 
   std::vector<MessageContent> getMetadata() const;
 
 private:
-  const std::vector<LootSettings::Language> *languages;
-  MessageContentTableWidget *tableWidget{new MessageContentTableWidget(this, *languages)};
+  const std::vector<LootSettings::Language>* languages;
+  MessageContentTableWidget* tableWidget{
+      new MessageContentTableWidget(this, *languages)};
 
   void setupUi();
   void translateUi();

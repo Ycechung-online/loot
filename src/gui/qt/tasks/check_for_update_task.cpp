@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -39,7 +37,7 @@ using loot::LOOT_VERSION_MAJOR;
 using loot::LOOT_VERSION_MINOR;
 using loot::LOOT_VERSION_PATCH;
 
-int compareLOOTVersion(const std::string &version) {
+int compareLOOTVersion(const std::string& version) {
   std::vector<std::string> parts;
   boost::split(parts, version, boost::is_any_of("."));
 
@@ -80,8 +78,8 @@ int compareLOOTVersion(const std::string &version) {
   return 0;
 }
 
-std::optional<QDate> getDateFromCommitJson(const QJsonDocument &document,
-                                           const std::string &commitHash) {
+std::optional<QDate> getDateFromCommitJson(const QJsonDocument& document,
+                                           const std::string& commitHash) {
   // Committer can be null, but that will just result in an Undefined value.
   const auto dateString = document["commit"]["committer"]["date"].toString();
   if (dateString.isEmpty()) {
@@ -113,13 +111,13 @@ void CheckForUpdateTask::execute() {
 
     sendHttpRequest("https://api.github.com/repos/loot/loot/releases/latest",
                     &CheckForUpdateTask::onGetLatestReleaseReplyFinished);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }
 
 void CheckForUpdateTask::sendHttpRequest(
-    const std::string &url,
+    const std::string& url,
     void (CheckForUpdateTask::*onFinished)()) {
   QNetworkRequest request(QUrl(QString::fromStdString(url)));
   request.setTransferTimeout(TRANSFER_TIMEOUT_MS);
@@ -145,7 +143,7 @@ void CheckForUpdateTask::onGetLatestReleaseReplyFinished() {
     }
 
     const auto responseData =
-        readHttpResponse(qobject_cast<QNetworkReply *>(sender()));
+        readHttpResponse(qobject_cast<QNetworkReply*>(sender()));
 
     if (!responseData.has_value()) {
       emit error("No response data");
@@ -172,7 +170,7 @@ void CheckForUpdateTask::onGetLatestReleaseReplyFinished() {
     const auto url =
         "https://api.github.com/repos/loot/loot/commits/tags/" + tagName;
     sendHttpRequest(url, &CheckForUpdateTask::onGetTagCommitReplyFinished);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }
@@ -187,7 +185,7 @@ void CheckForUpdateTask::onGetTagCommitReplyFinished() {
     }
 
     const auto responseData =
-        readHttpResponse(qobject_cast<QNetworkReply *>(sender()));
+        readHttpResponse(qobject_cast<QNetworkReply*>(sender()));
 
     if (!responseData.has_value()) {
       emit error("No response data");
@@ -214,7 +212,7 @@ void CheckForUpdateTask::onGetTagCommitReplyFinished() {
     const auto url =
         "https://api.github.com/repos/loot/loot/commits/" + getLootRevision();
     sendHttpRequest(url, &CheckForUpdateTask::onGetBuildCommitReplyFinished);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }
@@ -234,7 +232,7 @@ void CheckForUpdateTask::onGetBuildCommitReplyFinished() {
     }
 
     const auto responseData =
-        readHttpResponse(qobject_cast<QNetworkReply *>(sender()));
+        readHttpResponse(qobject_cast<QNetworkReply*>(sender()));
 
     if (!responseData.has_value()) {
       emit error("No response data");
@@ -250,15 +248,19 @@ void CheckForUpdateTask::onGetBuildCommitReplyFinished() {
     }
 
     if (tagCommitDate.value() > buildCommitDate.value()) {
-      logger->info("Tag date: {}, build date: {}",
-                   tagCommitDate.value().toString().toStdString(),
-                   buildCommitDate.value().toString().toStdString());
+      if (logger) {
+        logger->info("Tag date: {}, build date: {}",
+                     tagCommitDate.value().toString().toStdString(),
+                     buildCommitDate.value().toString().toStdString());
+      }
       emit finished(true);
-    } else if (logger) {
-      logger->info("No LOOT update is available.");
+    } else {
+      if (logger) {
+        logger->info("No LOOT update is available.");
+      }
       emit finished(false);
     }
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }

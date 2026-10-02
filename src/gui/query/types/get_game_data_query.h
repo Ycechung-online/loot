@@ -1,27 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for
-Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_GUI_QUERY_GET_GAME_DATA_QUERY
 #define LOOT_GUI_QUERY_GET_GAME_DATA_QUERY
@@ -48,6 +46,7 @@ public:
        the game data, so also load the metadata lists. */
     bool isFirstLoad = game_->getPlugins().empty();
 
+    std::mutex exceptionMutex;
     std::exception_ptr exceptionPointer;
     std::vector<std::thread> threads;
 
@@ -55,6 +54,7 @@ public:
       try {
         game_->loadAllInstalledPlugins(true);
       } catch (...) {
+        std::lock_guard<std::mutex> lock(exceptionMutex);
         if (exceptionPointer == nullptr) {
           exceptionPointer = std::current_exception();
         }
@@ -66,6 +66,7 @@ public:
         try {
           game_->loadMetadata();
         } catch (...) {
+          std::lock_guard<std::mutex> lock(exceptionMutex);
           if (exceptionPointer == nullptr) {
             exceptionPointer = std::current_exception();
           }
@@ -78,6 +79,7 @@ public:
         game_->getCreationClubPlugins().load(
             game_->getSettings().getId(), game_->getSettings().getGamePath());
       } catch (...) {
+        std::lock_guard<std::mutex> lock(exceptionMutex);
         if (exceptionPointer == nullptr) {
           exceptionPointer = std::current_exception();
         }
@@ -87,10 +89,11 @@ public:
     for (auto& thread : threads) {
       if (thread.joinable()) {
         thread.join();
-        if (exceptionPointer != nullptr) {
-          std::rethrow_exception(exceptionPointer);
-        }
       }
+    }
+
+    if (exceptionPointer != nullptr) {
+      std::rethrow_exception(exceptionPointer);
     }
 
     // Sort plugins into their load order.

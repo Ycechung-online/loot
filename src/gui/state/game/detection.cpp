@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -42,7 +40,8 @@ bool isInstalled(const GameSettings& settings) {
     logger->trace("Checking if game \"{}\" is installed.", settings.getName());
   }
 
-  return isValidGamePath(settings.getId(), settings.getMasterFilename(), settings.getGamePath());
+  return isValidGamePath(
+      settings.getId(), settings.getMasterFilename(), settings.getGamePath());
 }
 
 std::vector<GameSettings> findInstalledGames(

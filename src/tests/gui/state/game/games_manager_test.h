@@ -1,26 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_GAME_GAMES_MANAGER_TEST
 #define LOOT_TESTS_GUI_STATE_GAME_GAMES_MANAGER_TEST
@@ -104,10 +103,9 @@ TEST(
   auto currentFolderName = TEST_GAMES_SETTINGS[1].getFolderName();
   manager.setCurrentGame(currentFolderName);
 
-  manager.setInstalledGames(
-      {
-          createSettings(GameId::tes5).setGamePath("different"),
-      });
+  manager.setInstalledGames({
+      createSettings(GameId::tes5).setGamePath("different"),
+  });
 
   EXPECT_EQ(currentFolderName,
             manager.getCurrentGame().getSettings().getFolderName());
@@ -123,10 +121,9 @@ TEST(
   auto currentFolderName = TEST_GAMES_SETTINGS[1].getFolderName();
   manager.setCurrentGame(currentFolderName);
 
-  manager.setInstalledGames(
-      {
-          createSettings(GameId::tes5).setGameLocalPath("different"),
-      });
+  manager.setInstalledGames({
+      createSettings(GameId::tes5).setGameLocalPath("different"),
+  });
 
   EXPECT_EQ(currentFolderName,
             manager.getCurrentGame().getSettings().getFolderName());
@@ -142,10 +139,9 @@ TEST(
   auto currentFolderName = TEST_GAMES_SETTINGS[1].getFolderName();
   manager.setCurrentGame(currentFolderName);
 
-  manager.setInstalledGames(
-      {
-          createSettings(GameId::tes5).setMaster("different"),
-      });
+  manager.setInstalledGames({
+      createSettings(GameId::tes5).setMaster("different"),
+  });
 
   EXPECT_EQ(currentFolderName,
             manager.getCurrentGame().getSettings().getFolderName());
@@ -162,9 +158,9 @@ TEST(
   manager.setCurrentGame(currentFolderName);
 
   GameSettings newGameSettings = createSettings(GameId::tes5)
-                             .setName("different")
-                             .setMinimumHeaderVersion(100.0f)
-                             .setMasterlistSource("different");
+                                     .setName("different")
+                                     .setMinimumHeaderVersion(100.0f)
+                                     .setMasterlistSource("different");
   manager.setInstalledGames({newGameSettings});
 
   EXPECT_EQ(currentFolderName,
@@ -213,7 +209,8 @@ TEST(GamesManager, setCurrentGameShouldNotInitialiseGameData) {
 
   manager.setCurrentGame(TEST_GAMES_SETTINGS[1].getFolderName());
 
-  EXPECT_EQ(0, manager.getInitialiseCount(TEST_GAMES_SETTINGS[1].getFolderName()));
+  EXPECT_EQ(0,
+            manager.getInitialiseCount(TEST_GAMES_SETTINGS[1].getFolderName()));
 }
 
 TEST(GamesManager,

@@ -1,10 +1,9 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2023 Hleb Valoshka
 
     This file is part of LOOT.
 
@@ -54,13 +53,14 @@
 
 #include "gui/qt/back_up_load_order_dialog.h"
 #include "gui/qt/card_delegate.h"
+#include "gui/qt/compare_load_orders_dialog.h"
 #include "gui/qt/filters_widget.h"
 #include "gui/qt/groups_editor/groups_editor_dialog.h"
 #include "gui/qt/plugin_editor/plugin_editor_widget.h"
 #include "gui/qt/plugin_item_filter_model.h"
 #include "gui/qt/plugin_item_model.h"
 #include "gui/qt/restore_load_order_dialog.h"
-#include "gui/qt/search_dialog.h"
+#include "gui/qt/search_toolbar.h"
 #include "gui/qt/settings/settings_dialog.h"
 #include "gui/qt/tasks/tasks.h"
 #include "gui/query/query.h"
@@ -84,7 +84,7 @@ class MainWindow : public QMainWindow {
   Q_PROPERTY(QColor linkColor MEMBER linkColor NOTIFY linkColorChanged)
 
 public:
-  explicit MainWindow(LootState &state, QWidget *parent = nullptr);
+  explicit MainWindow(LootState& state, QWidget* parent = nullptr);
 
   void initialise();
   void applyTheme();
@@ -100,75 +100,79 @@ signals:
   void linkColorChanged();
 
 private:
-  LootState *state;
+  LootState* state;
 
-  QAction *actionSort{new QAction(this)};
-  QAction *actionApplySort{new QAction(this)};
-  QAction *actionDiscardSort{new QAction(this)};
-  QAction *actionUpdateMasterlist{new QAction(this)};
-  QAction *actionSearch{new QAction(this)};
-  QAction *actionViewDocs{new QAction(this)};
-  QAction *actionOpenFAQs{new QAction(this)};
-  QAction *actionOpenLOOTDataFolder{new QAction(this)};
-  QAction *actionJoinDiscordServer{new QAction(this)};
-  QAction *actionAbout{new QAction(this)};
-  QAction *actionQuit{new QAction(this)};
-  QAction *actionOpenGroupsEditor{new QAction(this)};
-  QAction *actionCopyLoadOrder{new QAction(this)};
-  QAction *actionCopyContent{new QAction(this)};
-  QAction *actionRefreshContent{new QAction(this)};
-  QAction *actionUnhideMessages{new QAction(this)};
-  QAction *actionUnhideGeneralMessages{new QAction(this)};
-  QAction *actionRedatePlugins{new QAction(this)};
-  QAction *actionBackUpLoadOrder{new QAction(this)};
-  QAction *actionRestoreLoadOrder{new QAction(this)};
-  QAction *actionFixAmbiguousLoadOrder{new QAction(this)};
-  QAction *actionClearAllUserMetadata{new QAction(this)};
-  QAction *actionCopyPluginName{new QAction(this)};
-  QAction *actionCopyCardContent{new QAction(this)};
-  QAction *actionCopyMetadata{new QAction(this)};
-  QAction *actionUnhidePluginMessages{new QAction(this)};
-  QAction *actionEditMetadata{new QAction(this)};
-  QAction *actionClearMetadata{new QAction(this)};
-  QAction *actionSettings{new QAction(this)};
-  QAction *actionUpdateMasterlists{new QAction(this)};
-  QAction *actionBackupData{new QAction(this)};
+  QAction* actionSort{new QAction(this)};
+  QAction* actionApplySort{new QAction(this)};
+  QAction* actionDiscardSort{new QAction(this)};
+  QAction* actionCompareLoadOrders{new QAction(this)};
+  QAction* actionUpdateMasterlist{new QAction(this)};
+  QAction* actionViewDocs{new QAction(this)};
+  QAction* actionOpenFAQs{new QAction(this)};
+  QAction* actionOpenLOOTDataFolder{new QAction(this)};
+  QAction* actionJoinDiscordServer{new QAction(this)};
+  QAction* actionAbout{new QAction(this)};
+  QAction* actionQuit{new QAction(this)};
+  QAction* actionOpenGroupsEditor{new QAction(this)};
+  QAction* actionCopyLoadOrder{new QAction(this)};
+  QAction* actionCopyContent{new QAction(this)};
+  QAction* actionRefreshContent{new QAction(this)};
+  QAction* actionUnhideMessages{new QAction(this)};
+  QAction* actionUnhideGeneralMessages{new QAction(this)};
+  QAction* actionRedatePlugins{new QAction(this)};
+  QAction* actionBackUpLoadOrder{new QAction(this)};
+  QAction* actionRestoreLoadOrder{new QAction(this)};
+  QAction* actionFixAmbiguousLoadOrder{new QAction(this)};
+  QAction* actionClearAllUserMetadata{new QAction(this)};
+  QAction* actionCopyPluginName{new QAction(this)};
+  QAction* actionCopyCardContent{new QAction(this)};
+  QAction* actionCopyMetadata{new QAction(this)};
+  QAction* actionUnhidePluginMessages{new QAction(this)};
+  QAction* actionEditMetadata{new QAction(this)};
+  QAction* actionClearMetadata{new QAction(this)};
+  QAction* actionSettings{new QAction(this)};
+  QAction* actionUpdateMasterlists{new QAction(this)};
+  QAction* actionBackupData{new QAction(this)};
 
-  QMenuBar *menubar{new QMenuBar(this)};
-  QMenu *menuFile{new QMenu(menubar)};
-  QMenu *menuHelp{new QMenu(menubar)};
-  QMenu *menuGame{new QMenu(menubar)};
-  QMenu *menuPlugin{new QMenu(menubar)};
-  QMenu *menuGeneralInfo{new QMenu(this)};
-  QStatusBar *statusbar{new QStatusBar(this)};
-  QToolBar *toolBar{new QToolBar(this)};
-  QComboBox *gameComboBox{new QComboBox(toolBar)};
-  QProgressDialog *progressDialog{new QProgressDialog(this)};
+  QMenuBar* menubar{new QMenuBar(this)};
+  QMenu* menuFile{new QMenu(menubar)};
+  QMenu* menuHelp{new QMenu(menubar)};
+  QMenu* menuGame{new QMenu(menubar)};
+  QMenu* menuPlugin{new QMenu(menubar)};
+  QMenu* menuGeneralInfo{new QMenu(this)};
+  QStatusBar* statusbar{new QStatusBar(this)};
+  QToolBar* toolBar{new QToolBar(this)};
+  QComboBox* gameComboBox{new QComboBox(toolBar)};
+  SearchToolBar* searchToolBar{new SearchToolBar(this)};
 
-  QSplitter *sidebarSplitter{new QSplitter(this)};
-  QToolBox *toolBox{new QToolBox(sidebarSplitter)};
-  FiltersWidget *filtersWidget{new FiltersWidget(toolBox)};
-  QTableView *sidebarPluginsView{new QTableView(toolBox)};
+  QProgressDialog* progressDialog{new QProgressDialog(this)};
 
-  QSplitter *editorSplitter{
+  QSplitter* sidebarSplitter{new QSplitter(this)};
+  QToolBox* toolBox{new QToolBox(sidebarSplitter)};
+  FiltersWidget* filtersWidget{new FiltersWidget(toolBox)};
+  QTableView* sidebarPluginsView{new QTableView(toolBox)};
+
+  QSplitter* editorSplitter{
       new QSplitter(Qt::Orientation::Vertical, sidebarSplitter)};
-  QListView *pluginCardsView{new QListView(editorSplitter)};
-  PluginEditorWidget *pluginEditorWidget{
+  QListView* pluginCardsView{new QListView(editorSplitter)};
+  PluginEditorWidget* pluginEditorWidget{
       new PluginEditorWidget(editorSplitter,
                              state->getSettings().getLanguages(),
                              state->getSettings().getLanguage())};
 
-  SettingsDialog *settingsDialog{
+  SettingsDialog* settingsDialog{
       new SettingsDialog(this, state->getPaths().getLootDataPath())};
-  SearchDialog *searchDialog{new SearchDialog(this)};
-  BackUpLoadOrderDialog *backupDialog{new BackUpLoadOrderDialog(this)};
-  RestoreLoadOrderDialog *restoreBackupDialog{new RestoreLoadOrderDialog(this)};
+  BackUpLoadOrderDialog* backupDialog{new BackUpLoadOrderDialog(this)};
+  RestoreLoadOrderDialog* restoreBackupDialog{new RestoreLoadOrderDialog(this)};
 
-  PluginItemModel *pluginItemModel{new PluginItemModel(this)};
-  PluginItemFilterModel *proxyModel{new PluginItemFilterModel(this)};
+  CompareLoadOrdersDialog* compareLoadOrdersDialog{
+      new CompareLoadOrdersDialog(this)};
+
+  PluginItemModel* pluginItemModel{new PluginItemModel(this)};
+  PluginItemFilterModel* proxyModel{new PluginItemFilterModel(this)};
   CardSizingCache cardSizingCache{pluginCardsView->viewport()};
 
-  GroupsEditorDialog *groupsEditor{
+  GroupsEditorDialog* groupsEditor{
       new GroupsEditorDialog(this, pluginItemModel)};
 
   std::optional<QPersistentModelIndex> lastEnteredCardIndex;
@@ -183,6 +187,8 @@ private:
   QColor linkColor;
 
   std::vector<std::string> themes;
+
+  std::string initialQtStyleName;
 
   void setupUi();
   void setupMenuBar();
@@ -204,42 +210,42 @@ private:
   void exitSortingState();
 
   void loadGame(bool isOnLOOTStartup);
-  void updateCounts(const std::vector<SourcedMessage> &generalMessages,
-                    const std::vector<PluginItem> &plugins);
+  void updateCounts(const std::vector<SourcedMessage>& generalMessages,
+                    const std::vector<PluginItem>& plugins);
   void updateGeneralInformation();
   void updateGeneralMessages();
   void updateSidebarColumnWidths();
-  void setFiltersState(PluginFiltersState &&state);
-  void setFiltersState(PluginFiltersState &&state,
-                       std::vector<std::string> &&overlappingPluginNames);
+  void setFiltersState(PluginFiltersState&& state);
+  void setFiltersState(PluginFiltersState&& state,
+                       std::vector<std::string>&& overlappingPluginNames);
   void refreshSearch();
-  void refreshPluginRawData(const std::string &pluginName);
+  void refreshPluginRawData(const std::string& pluginName);
 
   bool hasErrorMessages() const;
 
   void sortPlugins(bool isAutoSort);
 
   void showFirstRunDialog();
-  void showNotification(const QString &message);
+  void showNotification(const QString& message);
 
   QModelIndex getSelectedPluginIndex() const;
   PluginItem getSelectedPlugin() const;
 
-  void closeEvent(QCloseEvent *event) override;
+  void closeEvent(QCloseEvent* event) override;
 
   void executeBackgroundQuery(std::unique_ptr<Query> query,
                               void (MainWindow::*onComplete)(QueryResult),
-                              ProgressUpdater *progressUpdater);
+                              ProgressUpdater* progressUpdater);
 
-  void handleError(const std::string &message);
-  void handleException(const std::exception &exception);
-  void handleQueryException(const Query &query,
-                            const std::exception &exception);
+  void handleError(const std::string& message);
+  void handleException(const std::exception& exception);
+  void handleQueryException(const Query& query,
+                            const std::exception& exception);
 
   void handleGameDataLoaded(QueryResult result);
   bool handlePluginsSorted(QueryResult result);
 
-  QMenu *createPopupMenu() override;
+  QMenu* createPopupMenu() override;
 
   std::optional<std::filesystem::path> createBackup();
 
@@ -247,7 +253,7 @@ private:
 
   void refreshGamesDropdown();
 
-  void setHiddenMessages(const std::vector<HiddenMessage> &hiddenMessages);
+  void setHiddenMessages(const std::vector<HiddenMessage>& hiddenMessages);
 
 private slots:
   void on_actionSettings_triggered();
@@ -255,7 +261,6 @@ private slots:
   void on_actionBackupData_triggered();
   void on_actionQuit_triggered();
   void on_actionOpenGroupsEditor_triggered();
-  void on_actionSearch_triggered();
   void on_actionCopyLoadOrder_triggered();
   void on_actionCopyContent_triggered();
   void on_actionBackUpLoadOrder_triggered();
@@ -283,23 +288,22 @@ private slots:
   void on_actionSort_triggered();
   void on_actionApplySort_triggered();
   void on_actionDiscardSort_triggered();
+  void on_actionCompareLoadOrders_triggered();
   void on_actionUpdateMasterlist_triggered();
 
-  void on_sidebarPluginsView_doubleClicked(const QModelIndex &index);
-  void on_sidebarPluginsView_customContextMenuRequested(const QPoint &position);
-  void handleSidebarPluginsSelectionChanged(const QItemSelection &selected,
-                                            const QItemSelection &deselected);
+  void on_sidebarPluginsView_doubleClicked(const QModelIndex& index);
+  void on_sidebarPluginsView_customContextMenuRequested(const QPoint& position);
+  void handleSidebarPluginsSelectionChanged(const QItemSelection& selected,
+                                            const QItemSelection& deselected);
 
-  void on_pluginCardsView_entered(const QModelIndex &index);
-  void on_pluginCardsView_pressed(const QModelIndex &index);
-  void on_pluginCardsView_customContextMenuRequested(const QPoint &position);
+  void on_pluginCardsView_entered(const QModelIndex& index);
+  void on_pluginCardsView_pressed(const QModelIndex& index);
+  void on_pluginCardsView_customContextMenuRequested(const QPoint& position);
 
-  void on_pluginItemModel_dataChanged(const QModelIndex &topLeft,
-                                      const QModelIndex &bottomRight,
-                                      const QList<int> &roles);
-  void on_pluginItemModel_rowsInserted(const QModelIndex &,
-                                       int first,
-                                       int last);
+  void on_pluginItemModel_dataChanged(const QModelIndex& topLeft,
+                                      const QModelIndex& bottomRight,
+                                      const QList<int>& roles);
+  void on_pluginItemModel_rowsInserted(const QModelIndex&, int first, int last);
 
   void on_pluginEditorWidget_accepted(PluginMetadata userMetadata);
   void on_pluginEditorWidget_rejected();
@@ -313,9 +317,8 @@ private slots:
 
   void on_groupsEditor_accepted();
 
-  void on_searchDialog_finished();
-  void on_searchDialog_textChanged(const QVariant &text);
-  void on_searchDialog_currentResultChanged(size_t resultIndex);
+  void on_searchToolBar_textChanged(const QVariant& text);
+  void on_searchToolBar_currentResultChanged(size_t resultIndex);
 
   void on_backupDialog_accepted();
 
@@ -327,9 +330,9 @@ private slots:
   void handleMasterlistUpdated(std::vector<QueryResult> results);
   void handleMasterlistsUpdated(std::vector<QueryResult> results);
   void handleOverlapFilterChecked(QueryResult result);
-  void handleProgressUpdate(const QString &message);
+  void handleProgressUpdate(const QString& message);
   void handleUpdateCheckFinished(QueryResult result);
-  void handleUpdateCheckError(const std::string &);
+  void handleUpdateCheckError(const std::string&);
 
   void handleIconColorChanged();
   void handleSidebarTextColorChanged();
@@ -338,8 +341,8 @@ private slots:
   void handleColorSchemeChanged();
 #endif
 
-  void handleHideMessage(const std::string &pluginName,
-                         const std::string &messageText);
+  void handleHideMessage(const std::string& pluginName,
+                         const std::string& messageText);
 };
 }
 

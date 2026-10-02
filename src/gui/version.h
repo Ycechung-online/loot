@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2017 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of the LOOT metadata validator.
 
@@ -30,8 +28,8 @@
 
 namespace loot {
 inline constexpr unsigned int LOOT_VERSION_MAJOR = 0;
-inline constexpr unsigned int LOOT_VERSION_MINOR = 28;
-inline constexpr unsigned int LOOT_VERSION_PATCH = 0;
+inline constexpr unsigned int LOOT_VERSION_MINOR = 29;
+inline constexpr unsigned int LOOT_VERSION_PATCH = 2;
 
 std::string getLootVersion();
 

@@ -1,26 +1,26 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2024 Dirk Stolle
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_GAME_DETECTION_GENERIC_TEST
 #define LOOT_TESTS_GUI_STATE_GAME_DETECTION_GENERIC_TEST
@@ -32,13 +32,13 @@ along with LOOT.  If not, see
 
 namespace loot::test {
 class Generic_FindGameInstallsTest
-    : public CommonGameTestFixture,
+    : public BaseGameDetectionTest,
       public testing::WithParamInterface<GameId> {
 protected:
-  Generic_FindGameInstallsTest() : CommonGameTestFixture(GetParam()) {}
+  Generic_FindGameInstallsTest() : BaseGameDetectionTest(GetParam()) {}
 
   void SetUp() override {
-    CommonGameTestFixture::SetUp();
+    BaseGameDetectionTest::SetUp();
 
     initialCurrentPath = std::filesystem::current_path();
 
@@ -53,7 +53,7 @@ protected:
     // Restore the previous current path.
     restoreCurrentPath();
 
-    CommonGameTestFixture::TearDown();
+    BaseGameDetectionTest::TearDown();
   }
 
   void restoreCurrentPath() const {
@@ -381,10 +381,10 @@ TEST_P(Generic_FindGameInstallsTest, shouldIdentifyGogRegistryGame) {
   }
 }
 
-class DetectGameInstallTest : public CommonGameTestFixture,
+class DetectGameInstallTest : public BaseGameDetectionTest,
                               public testing::WithParamInterface<GameId> {
 protected:
-  DetectGameInstallTest() : CommonGameTestFixture(GetParam()) {
+  DetectGameInstallTest() : BaseGameDetectionTest(GetParam()) {
     if (GetParam() == GameId::nehrim) {
       touch(gamePath / "NehrimLauncher.exe");
     } else if (GetParam() == GameId::enderal ||

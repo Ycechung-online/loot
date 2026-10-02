@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -115,27 +113,36 @@ QLabel* createMessageLabel() {
   return label;
 }
 
-void updateMessageLabel(QLabel* label, const BareMessage& message) {
+bool updateMessageLabel(QLabel* label, const BareMessage& message) {
   static constexpr const char* MESSAGE_TYPE_PROPERTY = "messageType";
 
   auto oldPropertyValue = label->property(MESSAGE_TYPE_PROPERTY);
   auto newPropertyValue = getPropertyValue(message.first);
   auto propertyChanged =
-      oldPropertyValue.isValid() && oldPropertyValue != newPropertyValue;
+      !oldPropertyValue.isValid() || oldPropertyValue != newPropertyValue;
 
-  label->setProperty(MESSAGE_TYPE_PROPERTY, newPropertyValue);
+  if (propertyChanged) {
+    label->setProperty(MESSAGE_TYPE_PROPERTY, newPropertyValue);
+  }
 
   // Set HTML because otherwise it's not possible to interpret the text as
   // CommonMark instead of GitHub Flavored Markdown, or set custom styling
   // beyond setting the link text (which is done by setting the palette Link
   // color).
-  label->setText(getHtmlText(message.second));
+  auto newText = getHtmlText(message.second);
+  auto textChanged = label->text() != newText;
+  if (textChanged) {
+    label->setText(newText);
+  }
 
-  if (propertyChanged) {
+  if (propertyChanged || textChanged) {
     // Trigger styling changes.
     label->style()->unpolish(label);
     label->style()->polish(label);
+    return true;
   }
+
+  return false;
 }
 
 std::vector<BareMessage> toBareMessages(
@@ -153,15 +160,8 @@ namespace loot {
 MessagesWidget::MessagesWidget(QWidget* parent) : QWidget(parent) { setupUi(); }
 
 void MessagesWidget::setMessages(const std::vector<SourcedMessage>& messages) {
-  if (!willChangeContent(messages)) {
-    // Avoid expensive layout changes.
-    return;
-  }
-
   setMessages(toBareMessages(messages));
 }
-
-void MessagesWidget::refresh() { setMessages(currentMessages); }
 
 void MessagesWidget::setupUi() {
   hideMessageAction->setIcon(IconFactory::getHideMessagesIcon());
@@ -204,21 +204,26 @@ void MessagesWidget::setMessages(const std::vector<BareMessage>& messages) {
   // Don't use rowCount() because that seems to have a starting value of 1
   // even when there's nothing in the layout yet. Instead, use count() /
   // COLUMN_COUNT.
-
-  // Delete any extra QLabels.
-  QLayoutItem* child = nullptr;
   const auto pastTheEndIndex = static_cast<int>(messages.size() * COLUMN_COUNT);
-  auto itemRemoved = false;
-  while ((child = layout()->takeAt(pastTheEndIndex)) != nullptr) {
-    delete child->widget();
-    delete child;
-    itemRemoved = true;
-  }
 
-  // For some reason the layout doesn't automatically resize if only some
-  // children are removed, but it does when all children are removed.
-  if (itemRemoved && layout()->count() != 0) {
-    layout()->invalidate();
+  // Only remove children if not removing them all - otherwise setStyleSheet()
+  // when changing the application theme causes Qt to throw an access violation
+  // exception.
+  if (!messages.empty()) {
+    // Delete any extra QLabels.
+    QLayoutItem* child = nullptr;
+    auto itemRemoved = false;
+    while ((child = layout()->takeAt(pastTheEndIndex)) != nullptr) {
+      delete child->widget();
+      delete child;
+      itemRemoved = true;
+    }
+
+    // For some reason the layout doesn't automatically resize if only some
+    // children are removed, but it does when all children are removed.
+    if (itemRemoved && layout()->count() != 0) {
+      layout()->invalidate();
+    }
   }
 
   // Add any missing QLabels.
@@ -236,31 +241,25 @@ void MessagesWidget::setMessages(const std::vector<BareMessage>& messages) {
   }
 
   // Now update the QLabels.
+  bool contentChanged = currentMessages.size() != messages.size();
   for (size_t i = 0; i < messages.size(); i += 1) {
     const auto position = static_cast<int>(i);
     auto label = qobject_cast<QLabel*>(
         gridLayout->itemAtPosition(position, MESSAGE_LABEL_COLUMN)->widget());
     const auto& message = messages.at(i);
-    updateMessageLabel(label, message);
+    contentChanged |= updateMessageLabel(label, message);
   }
 
-  layout()->activate();
-  setVisible(!messages.empty());
+  if (contentChanged) {
+    layout()->activate();
+    setVisible(!messages.empty());
 
-  // Store the source markdown text because it can't be retrieved from the
-  // QLabel text, as that's set using HTML. Also store the message types
-  // because it's easier to do that than to derive them from the current
-  // layout content.
-  currentMessages = messages;
-}
-
-bool MessagesWidget::willChangeContent(
-    const std::vector<SourcedMessage>& messages) const {
-  if (messages.size() != currentMessages.size()) {
-    return true;
+    // Store the source markdown text because it can't be retrieved from the
+    // QLabel text, as that's set using HTML. Also store the message types
+    // because it's easier to do that than to derive them from the current
+    // layout content.
+    currentMessages = messages;
   }
-
-  return currentMessages != toBareMessages(messages);
 }
 
 void MessagesWidget::onCustomContextMenuRequested(const QPoint& pos) {

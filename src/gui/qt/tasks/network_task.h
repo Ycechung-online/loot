@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2022    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -36,11 +34,11 @@ class NetworkTask : public Task {
 protected:
   static constexpr int TRANSFER_TIMEOUT_MS{30000};
 
-  void handleException(const std::exception &exception);
+  void handleException(const std::exception& exception);
 
 protected slots:
   void onNetworkError(QNetworkReply::NetworkError error);
-  void onSSLError(const QList<QSslError> &errors);
+  void onSSLError(const QList<QSslError>& errors);
 };
 }
 

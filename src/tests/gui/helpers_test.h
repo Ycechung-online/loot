@@ -1,26 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014-2016    WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 #ifndef LOOT_TESTS_GUI_HELPERS_TEST
 #define LOOT_TESTS_GUI_HELPERS_TEST
 
@@ -37,10 +36,7 @@ TEST(GetPreferredUILanguages, shouldReturnAtLeastOneLanguage) {
   EXPECT_FALSE(getPreferredUILanguages().empty());
 }
 
-class FindXboxGamingRootPathTest : public CommonGameTestFixture {
-protected:
-  FindXboxGamingRootPathTest() : CommonGameTestFixture(GameId::tes3) {}
-};
+class FindXboxGamingRootPathTest : public FilesystemTest {};
 
 TEST(GetDriveRootPaths, shouldReturnNonEmptyVector) {
   EXPECT_FALSE(getDriveRootPaths().empty());
@@ -48,55 +44,55 @@ TEST(GetDriveRootPaths, shouldReturnNonEmptyVector) {
 
 TEST_F(FindXboxGamingRootPathTest,
        shouldReturnNulloptIfTheDotGamingRootFileDoesNotExist) {
-  EXPECT_FALSE(findXboxGamingRootPath(dataPath).has_value());
+  EXPECT_FALSE(findXboxGamingRootPath(rootPath_).has_value());
 }
 
 TEST_F(FindXboxGamingRootPathTest,
        shouldReturnNulloptIfDotGamingRootIsADirectory) {
-  std::filesystem::create_directory(dataPath / ".GamingRoot");
+  std::filesystem::create_directory(rootPath_ / ".GamingRoot");
 
-  EXPECT_FALSE(findXboxGamingRootPath(dataPath).has_value());
+  EXPECT_FALSE(findXboxGamingRootPath(rootPath_).has_value());
 }
 
 TEST_F(FindXboxGamingRootPathTest,
        shouldReturnNulloptIfDotGamingRootContainsAnOddNumberOfBytes) {
-  std::ofstream out(dataPath / ".GamingRoot", std::ios::binary);
+  std::ofstream out(rootPath_ / ".GamingRoot", std::ios::binary);
   out << "12345678901";
   out.close();
 
-  EXPECT_FALSE(findXboxGamingRootPath(dataPath).has_value());
+  EXPECT_FALSE(findXboxGamingRootPath(rootPath_).has_value());
 }
 
 TEST_F(FindXboxGamingRootPathTest,
        shouldReturnNulloptIfDotGamingRootIsTooShort) {
-  std::ofstream out(dataPath / ".GamingRoot", std::ios::binary);
+  std::ofstream out(rootPath_ / ".GamingRoot", std::ios::binary);
   out << "12";
   out.close();
 
-  EXPECT_FALSE(findXboxGamingRootPath(dataPath).has_value());
+  EXPECT_FALSE(findXboxGamingRootPath(rootPath_).has_value());
 }
 
 TEST_F(FindXboxGamingRootPathTest,
        shouldInterpretTheNinthAndFollowingBytesAsANullTerminatedUtf16LeString) {
-  std::ofstream out(dataPath / ".GamingRoot", std::ios::binary);
+  std::ofstream out(rootPath_ / ".GamingRoot", std::ios::binary);
   const char* data = "12345678t\0e\0s\0t\0 \0p\0a\0t\0h\0\0\0";
   out.write(data, 28);
   out.close();
 
-  const auto gamingRootPath = findXboxGamingRootPath(dataPath);
-  const auto expectedPath = dataPath / "test path";
+  const auto gamingRootPath = findXboxGamingRootPath(rootPath_);
+  const auto expectedPath = rootPath_ / "test path";
 
   EXPECT_EQ(expectedPath, gamingRootPath);
 }
 
 TEST_F(FindXboxGamingRootPathTest,
        shouldReturnNulloptIfDotGamingRootPathContainsNul) {
-  std::ofstream out(dataPath / ".GamingRoot", std::ios::binary);
+  std::ofstream out(rootPath_ / ".GamingRoot", std::ios::binary);
   const char* data = "12345678t\0e\0s\0t\0\0\0p\0a\0t\0h\0\0\0";
   out.write(data, 28);
   out.close();
 
-  EXPECT_FALSE(findXboxGamingRootPath(dataPath).has_value());
+  EXPECT_FALSE(findXboxGamingRootPath(rootPath_).has_value());
 }
 
 // MSVC interprets source files in the default code page, so

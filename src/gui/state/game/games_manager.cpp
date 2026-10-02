@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -21,7 +19,7 @@
     You should have received a copy of the GNU General Public License
     along with LOOT.  If not, see
     <https://www.gnu.org/licenses/>.
-*/
+    */
 
 #include "gui/state/game/games_manager.h"
 
@@ -29,8 +27,10 @@ namespace {
 bool gameNeedsRecreating(const loot::gui::Game& game,
                          const loot::GameSettings& newSettings) {
   return game.getSettings().getGamePath() != newSettings.getGamePath() ||
-         game.getSettings().getGameLocalPath() != newSettings.getGameLocalPath() ||
-         game.getSettings().getMasterFilename() != newSettings.getMasterFilename();
+         game.getSettings().getGameLocalPath() !=
+             newSettings.getGameLocalPath() ||
+         game.getSettings().getMasterFilename() !=
+             newSettings.getMasterFilename();
 }
 }
 
@@ -69,7 +69,8 @@ void GamesManager::setInstalledGames(
         currentGameFolder.value() == gameSettings.getFolderName() &&
         !gameNeedsRecreating(getCurrentGame(), gameSettings)) {
       if (logger) {
-        logger->trace("Updating game entry for: {}", gameSettings.getFolderName());
+        logger->trace("Updating game entry for: {}",
+                      gameSettings.getFolderName());
       }
 
       getCurrentGame()

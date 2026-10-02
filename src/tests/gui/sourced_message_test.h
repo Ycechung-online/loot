@@ -1,26 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014-2016    WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 #ifndef LOOT_TESTS_GUI_SOURCED_MESSAGE_TEST
 #define LOOT_TESTS_GUI_SOURCED_MESSAGE_TEST
 
@@ -176,15 +175,15 @@ TEST(ToSourcedMessage, shouldDistinguishBetweenSingularAndPluralCounts) {
 
 TEST(ToSourcedMessage,
      shouldReturnAMessageWithCountsButNoDetailStringIfDetailIsAnEmptyVector) {
-  const auto message = toSourcedMessage(
-      PluginCleaningData(0x12345678,
+  const auto message =
+      toSourcedMessage(PluginCleaningData(0x12345678,
                                           "cleaner",
                                           std::vector<MessageContent>(),
                                           1,
                                           2,
                                           3,
                                           "condition"),
-      MessageContent::DEFAULT_LANGUAGE);
+                       MessageContent::DEFAULT_LANGUAGE);
   EXPECT_EQ(MessageType::warn, message.type);
   EXPECT_EQ(
       "cleaner found 1 ITM record, 2 deleted references and 3 deleted "

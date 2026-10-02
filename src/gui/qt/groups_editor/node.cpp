@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -38,8 +36,8 @@
 #include "gui/state/logging.h"
 
 namespace loot {
-NodeLabel::NodeLabel(const GraphView &graphView,
-                     const QString &text,
+NodeLabel::NodeLabel(const GraphView& graphView,
+                     const QString& text,
                      bool isUserMetadata) :
     QGraphicsSimpleTextItem(text) {
   setZValue(2);
@@ -50,13 +48,13 @@ NodeLabel::NodeLabel(const GraphView &graphView,
   setBrush(brush);
 }
 
-void NodeLabel::paint(QPainter *painter,
-                      const QStyleOptionGraphicsItem *option,
-                      QWidget *widget) {
+void NodeLabel::paint(QPainter* painter,
+                      const QStyleOptionGraphicsItem* option,
+                      QWidget* widget) {
   QColor windowBackgroundColor =
       QGuiApplication::palette().color(QPalette::Active, QPalette::Window);
   const auto viewBackgroundColor =
-      qobject_cast<GraphView *>(scene()->parent())->getBackgroundColor();
+      qobject_cast<GraphView*>(scene()->parent())->getBackgroundColor();
 
   painter->setPen(Qt::NoPen);
   painter->setBrush(toOpaqueColor(viewBackgroundColor, windowBackgroundColor));
@@ -65,8 +63,8 @@ void NodeLabel::paint(QPainter *painter,
   QGraphicsSimpleTextItem::paint(painter, option, widget);
 }
 
-Node::Node(GraphView *graphView,
-           const QString &name,
+Node::Node(GraphView* graphView,
+           const QString& name,
            bool isUserMetadata,
            bool containsInstalledPlugins) :
     textItem(new NodeLabel(*graphView, name, isUserMetadata)),
@@ -86,7 +84,7 @@ QString Node::getName() const { return textItem->text(); }
 
 bool Node::isUserMetadata() const { return isUserMetadata_; }
 
-void Node::setName(const QString &name) {
+void Node::setName(const QString& name) {
   textItem->setText(name);
   updateTextPos();
 }
@@ -95,17 +93,17 @@ void Node::setContainsInstalledPlugins(bool contains) {
   this->containsInstalledPlugins = contains;
 }
 
-void Node::addEdge(Edge *edge) {
+void Node::addEdge(Edge* edge) {
   edgeList.append(edge);
   edge->adjust();
 }
 
-void Node::removeEdge(Edge *edge) { edgeList.removeOne(edge); }
+void Node::removeEdge(Edge* edge) { edgeList.removeOne(edge); }
 
-QList<Edge *> Node::getEdges() const { return edgeList; }
+QList<Edge*> Node::getEdges() const { return edgeList; }
 
-QList<Edge *> Node::getInEdges() const {
-  QList<Edge *> inEdges;
+QList<Edge*> Node::getInEdges() const {
+  QList<Edge*> inEdges;
 
   for (const auto edge : edgeList) {
     if (edge->getSourceNode() != this) {
@@ -116,8 +114,8 @@ QList<Edge *> Node::getInEdges() const {
   return inEdges;
 }
 
-QList<Edge *> Node::getOutEdges() const {
-  QList<Edge *> outEdges;
+QList<Edge*> Node::getOutEdges() const {
+  QList<Edge*> outEdges;
 
   for (const auto edge : edgeList) {
     if (edge->getDestNode() != this) {
@@ -167,15 +165,13 @@ QPainterPath Node::shape() const {
   return path;
 }
 
-void Node::paint(QPainter *painter,
-                 const QStyleOptionGraphicsItem *,
-                 QWidget *) {
+void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) {
   painter->setPen(Qt::NoPen);
   painter->setBrush(getNodeColor());
   painter->drawEllipse(-RADIUS, -RADIUS, DIAMETER, DIAMETER);
 }
 
-void Node::setPosition(const QPointF &pos) {
+void Node::setPosition(const QPointF& pos) {
   QGraphicsItem::setPos(pos);
 
   updateTextPos();
@@ -183,9 +179,9 @@ void Node::setPosition(const QPointF &pos) {
 
 void Node::setPosition(qreal x, qreal y) { setPosition(QPointF(x, y)); }
 
-QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value) {
+QVariant Node::itemChange(GraphicsItemChange change, const QVariant& value) {
   if (change == ItemPositionHasChanged) {
-    for (Edge *edge : edgeList) {
+    for (Edge* edge : edgeList) {
       edge->adjust();
     }
   }
@@ -193,11 +189,11 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value) {
   return QGraphicsItem::itemChange(change, value);
 }
 
-void Node::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+void Node::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   update();
   QGraphicsItem::mousePressEvent(event);
 
-  auto graphicsWidget = qobject_cast<GraphView *>(scene()->parent());
+  auto graphicsWidget = qobject_cast<GraphView*>(scene()->parent());
 
   if (isUserMetadata_ && !containsInstalledPlugins &&
       event->button() == Qt::RightButton) {
@@ -253,7 +249,7 @@ void Node::mousePressEvent(QGraphicsSceneMouseEvent *event) {
   }
 }
 
-void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
   update();
   QGraphicsItem::mouseReleaseEvent(event);
 
@@ -266,7 +262,7 @@ void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
 
   auto logger = getLogger();
   for (const auto item : itemsUnderMouse) {
-    auto node = qgraphicsitem_cast<Node *>(item);
+    auto node = qgraphicsitem_cast<Node*>(item);
     if (!node || node == this) {
       continue;
     }
@@ -285,7 +281,7 @@ void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
   removeEdgeToCursor();
 }
 
-void Node::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
+void Node::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) {
   update();
   QGraphicsItem::mouseDoubleClickEvent(event);
 
@@ -300,17 +296,17 @@ void Node::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
   drawEdgeToCursor = true;
 }
 
-void Node::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+void Node::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
   QGraphicsItem::mouseMoveEvent(event);
 
   updateTextPos();
 
-  qobject_cast<GraphView *>(scene()->parent())->registerUserLayoutChange();
+  qobject_cast<GraphView*>(scene()->parent())->registerUserLayoutChange();
 
   if (drawEdgeToCursor) {
     removeEdgeToCursor();
 
-    const auto graphView = qobject_cast<GraphView *>(scene()->parent());
+    const auto graphView = qobject_cast<GraphView*>(scene()->parent());
     const auto color = getDefaultColor(*graphView, true);
     auto pen =
         QPen(color, LINE_WIDTH, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
@@ -352,7 +348,7 @@ QColor Node::getNodeColor() const {
     return QColor("#8BC34A");
   }
 
-  const auto graphView = qobject_cast<GraphView *>(scene()->parent());
+  const auto graphView = qobject_cast<GraphView*>(scene()->parent());
   return getDefaultColor(*graphView, isUserMetadata_);
 }
 

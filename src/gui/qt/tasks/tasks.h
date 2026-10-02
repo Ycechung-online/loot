@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2022    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -38,7 +36,7 @@ namespace loot {
 class ProgressUpdater : public QObject {
   Q_OBJECT
 signals:
-  void progressUpdate(const QString &message);
+  void progressUpdate(const QString& message);
 };
 
 class Task : public QObject {
@@ -48,7 +46,7 @@ public slots:
 
 signals:
   void finished(QueryResult result);
-  void error(const std::string &exception);
+  void error(const std::string& exception);
 };
 
 class QueryTask : public Task {
@@ -65,15 +63,15 @@ private:
 
 QFuture<QueryResult> executeBackgroundQuery(std::unique_ptr<Query> query);
 
-QFuture<QueryResult> taskFuture(Task *task);
+QFuture<QueryResult> taskFuture(Task* task);
 
 QFuture<QList<QFuture<QueryResult>>> whenAllTasks(
-    const std::vector<Task *> &tasks);
+    const std::vector<Task*>& tasks);
 
-void executeConcurrentBackgroundTasks(const std::vector<Task *> &tasks,
+void executeConcurrentBackgroundTasks(const std::vector<Task*>& tasks,
                                       QFuture<void> whenAll);
 
-QFuture<QueryResult> executeBackgroundTask(Task *task);
+QFuture<QueryResult> executeBackgroundTask(Task* task);
 }
 
 #endif

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -46,7 +44,7 @@ SourcedMessage createEvalFailedMessage(std::string_view pluginName,
                                        std::string_view what) {
   return loot::createPlainTextSourcedMessage(
       loot::MessageType::error,
-      loot::MessageSource::caughtException,
+      loot::MessageSource::conditionEvalFailed,
       fmt::format(
           loot::translate("\"{0}\" contains a condition that could not be "
                           "evaluated. Details: {1}"),

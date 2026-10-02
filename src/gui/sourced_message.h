@@ -1,9 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-    Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012-2016    WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -47,7 +46,7 @@ enum struct MessageSource : unsigned int {
   init,
   autoSortCancellation,
   updateCheck,
-  caughtException,
+  loadLoadOrderStateFailed,
   unsortedLoadOrderCheck,
   activePluginsCountCheck,
   removedPluginsCheck,
@@ -56,6 +55,14 @@ enum struct MessageSource : unsigned int {
   lightPluginNotSupported,
   invalidMediumPlugin,
   blueprintMasterMaster,
+  blueprintNonMaster,
+  blueprintShipsNonEsm,
+  blueprintShipsNonBlueprint,
+  recoveredGroup,
+  recoveredGroupDetected,
+  cyclicInteraction,
+  conditionEvalFailed,
+  parsingMetadataFailed,
 };
 
 struct SourcedMessage {

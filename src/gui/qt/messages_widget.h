@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -43,8 +41,6 @@ public:
 
   void setMessages(const std::vector<SourcedMessage>& messages);
 
-  void refresh();
-
 signals:
   void hideMessage(const std::string& messageText);
 
@@ -60,8 +56,6 @@ private:
   void translateUi();
 
   void setMessages(const std::vector<BareMessage>& messages);
-
-  bool willChangeContent(const std::vector<SourcedMessage>& messages) const;
 
   void onCustomContextMenuRequested(const QPoint& pos);
   void onHideMessageAction();

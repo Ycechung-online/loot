@@ -2,21 +2,164 @@
 Version History
 ***************
 
-Only application history is recorded here. A full history of masterlist changes may be viewed by browsing the GitHub repositories.
+Only application history is recorded here. A full history of masterlist changes
+may be viewed by browsing the GitHub repositories.
 
-0.29.0 - Unreleased
+0.29.2 - 2026-08-16
 ===================
 
 Added
 -----
 
+- Support for detecting OpenMW v0.51.0 using its Windows Registry key.
+- A new dialog for comparing current and sorted load orders. The dialog can be
+  accessed from the Game menu or the toolbar while LOOT is displaying an
+  unapplied sorted load order.
+- When a masterlist update removes groups that are referenced by user metadata
+  (directly or indirectly), LOOT will now recover those groups as user metadata,
+  appending `` (Recovered)`` to their original names. User metadata for
+  installed plugins is also updated to use the new group names, and a general
+  warning message is displayed for each recovered group to inform the user of
+  the change, so that they can update their user metadata as necessary. A
+  separate warning message is displayed after loading metadata if there are any
+  groups with names ending in `` (Recovered)``.
+
+Fixed
+-----
+
+- A crash that could occur when enabling the official plugin cleaning message
+  filter for Fallout 4, Skyrim VR or Nehrim.
+- When LOOT was run through MO2 for a game install path that included a symlink,
+  plugins installed by MO2 would not appear in LOOT. Note that although such
+  plugins are now displayed in LOOT, it's a known issue that MO2's virtual
+  filesystem does not work with symlinks, so there may be other negative effects
+  when they are used together.
+- When regenerating state-based general messages in response to state changes
+  (e.g. loading data or sorting), LOOT now only removes the existing messages
+  that are relevant to the state that has changed before generating any new
+  messages. For example, if there is a message about a metadata parsing error,
+  it will no longer be removed when loading plugins.
+- It was not possible to select the toolbar buttons (e.g. sort plugins, update
+  masterlist) using the keyboard. They can now be selected using the Tab key.
+- When LOOT was running as a Flatpak application and OpenMW was not installed as
+  a Flatpak application and the host did not have the ``XDG_CONFIG_HOME`` and/or ``XDG_DATA_HOME`` environment variables defined, LOOT would incorrectly look
+  for OpenMW's default user config and user data directories inside its own
+  Flatpak data directory instead of in the host's home directory. Via libloot.
+
+
+Changed
+-------
+
+- The search dialog has been replaced by a toolbar, making it accessible when
+  using only a keyboard. In addition, the find next and find previous buttons
+  now support the desktop's standard keyboard shortcuts for those operations
+  (e.g. F3 and Shift+F3 respectively on Windows, KDE and GNOME).
+- When multiple versions of OpenMW are installed, LOOT can now detect them all
+  using their Windows Registry keys instead of stopping at the first version it
+  finds.
+- The dropdown list of plugins displayed by the plugin metadata editor when
+  editing filename values for requirements, incompatibilities or "load after"
+  metadata no longer includes the plugin that is having its metadata edited.
+- When reading BSAs and BA2s, LOOT now uses asset paths instead of hashes
+  of those paths. This improves the accuracy of asset overlap checks performed
+  during sorting, as the hashes used by BSAs are relatively collision-prone.
+
+  This means that BSAs are now required to include folder and file names, and
+  any that don't will be skipped with an error logged for each. All official
+  BSAs and BSAs created using the official tools include folder and file names.
+  Via libloot.
+- Updated libloot to v0.29.6.
+- Updated Qt to v6.11.1. This may impact users running LOOT through Wine, as
+  it means that LOOT's installer no longer packages ``icuuc.dll``: instead, it
+  is provided by Wine as of v11.5.
+- Updated the Bulgarian translation.
+- Updated the Russian translation.
+- Updated the Tamil translation.
+
+
+0.29.1 - 2026-04-18
+===================
+
+Added
+-----
+
+- Warning messages are now displayed for Starfield plugins if:
+
+  - they are a blueprint plugin (i.e. they have the blueprint flag set) but are
+    not a master file
+  - their filename starts with ``BlueprintShips-`` but does not have the
+    ``.esm`` file extension
+  - their filename starts with ``BlueprintShips-`` but the plugin does not have
+    the blueprint flag set.
+
+  Such plugins are unsupported and should be avoided, as it's not possible to
+  reliably activate them and may not be possible to give them a consistent load
+  order position.
+
+Fixed
+-----
+
+- The Flatpak could crash on startup or when opening the Groups Editor due to
+  the OGDF dependency being built targeting the instruction set of the machine
+  that the Flatpak was built on, so the code could try to use functionality that
+  is not present in older CPUs. It now targets the ``x86-64`` CPU type, which
+  is supported by almost all AMD and Intel CPUs released in the last 20 years.
+  This change was also applied in a post-release update to the v0.29.0 Flatpak
+  on Flathub.
+- The installer did not include ``icuuc.dll``, causing a crash on startup when
+  LOOT was run using Wine.
+- The installer did not install the Tamil translation.
+- The uninstaller did not remove the empty Turkish translation directories after
+  removing the translation files.
+- When loading a load order that contained an inactive master, one or more
+  blueprint masters and no non-master plugins, the inactive master was
+  incorrectly positioned after the blueprint masters if it had a more recent
+  modification timestamp. Via libloot.
+- The wrong fallback filename ordering behaviour was used when loading a load
+  order and ordering plugins by timestamp and two plugins had the same
+  modification timestamp. Via libloot.
+- When loading a Starfield load order, ``sTestFile`` entries were ordered
+  differently to how they're ordered by Starfield v1.16.236.0. Via libloot.
+
+Changed
+-------
+
+- When setting a Starfield load order, blueprint plugins and plugins with names
+  that start with ``BlueprintShips-`` are no longer written to ``plugins.txt``.
+  This means that it is effectively no longer possible to explicitly activate
+  such plugins, or to give them consistent load order positions unless they are
+  blueprint masters. Via libloot.
+- Added some error handling for when opening various files fails, including
+  masterlists during masterlist update, Qt stylesheets, Epic Games Store
+  manifest files, Heroic Games Launcher files and load order backup files.
+- The Flatpak is now built with more debug info. This change was also applied in
+  a post-release update to the v0.29.0 Flatpak on Flathub.
+- Updated libloot to v0.29.4.
+- Updated the German translation.
+
+Removed
+-------
+
+- ``qtuiotouchplugin.dll`` is no longer included in the release archive, as it's
+  not used by LOOT.
+
+0.29.0 - 2026-04-11
+===================
+
+Added
+-----
+
+- Support for Starfield v1.16.236.0's new ``SFBGS00D.esm`` and ``SFBGS047.esm``
+  plugins and the Terran Armada DLC's new ``SFBGS050.esm`` plugin, which have
+  hardcoded load order positions.
 - Support for adding multiple plugins to the same group at once, using a new
   multi-select list in the Groups Editor.
 - Support for detecting OpenMW v0.50.0 using its Windows Registry key.
 - Support for building LOOT using a prebuilt copy of minizip-ng without its
   minizip compatibility layer. minizip and minizip-ng with its minizip
   compatibility layer were already supported.
-
+- A debug-level log message is now written when a plugin is successfully loaded.
+  Via libloot.
 
 Fixed
 -----
@@ -24,15 +167,35 @@ Fixed
 - Warnings about ambiguous load orders when Starfield blueprint plugins or
   BlueprintShips plugins are installed (aside from
   ``BlueprintShips-Starfield.esm``, which was already handled as a special
-  case). The "Trackers Alliance: The Complete Bounty Series" Creation includes
-  such plugins.
+  case). The Terran Armada DLC and "Trackers Alliance: The Complete Bounty
+  Series" Creation include such plugins.
 - Starfield BlueprintShips plugins are now correctly displayed as active when
-  they are implicitly activated by there being active plugin that matches the
-  BlueprintShips plugin's suffix. For example, if a plugin named
-  ``example.esp`` is active, then ``BlueprintShips-example.esm`` is also active
-  if the latter is installed.
+  there is an active plugin that matches the BlueprintShips plugin's suffix. For
+  example, if a plugin named ``example.esp`` is active, then
+  ``BlueprintShips-example.esm`` is also active if the latter is installed.
 - An error that occurred when saving settings when there is no current game
   (e.g. because LOOT could not detect any installed games).
+- When switching theme from "default (dark)" or "default (light)" to "default",
+  the colour scheme override was not removed, which led to the wrong colours
+  being used until LOOT was restarted.
+- The general information card's hidden messages icon colour was not updated
+  on changing between light-coloured and dark-coloured themes until LOOT was
+  restarted.
+- Depending on the Qt style used, switching themes could lead to the general
+  information and plugin cards changing size, causing their layout to be wrong
+  until LOOT was restarted.
+- Switching themes did not reliably update the styling of the last card that the
+  user moused over before switching themes.
+- After deleting a game in the Settings dialog, the displayed game settings
+  would be for the game below the selected game, until another game was
+  selected.
+- LOOT leaked memory whenever a plugin card's content changed in a way that
+  could affect its height (e.g. by adding a message to the plugin).
+- When detecting an installed copy of a game that has its different languages
+  installed side-by-side (e.g. Fallout 3 from the Epic Games Store), LOOT
+  attempts to select the same language as the preferred system language(s), but
+  on Linux it was often unable to determine what the preferred languages were.
+- On Linux the LOOT window icon was displayed with a bright green border.
 - Building LOOT using CMake's Ninja generator on Windows.
 - Various compilation, linking and packaging errors encountered when
   cross-compiling LOOT for Windows using mingw-w64.
@@ -48,19 +211,42 @@ Changed
 - The "Copy Load Order" Game menu action is no longer disabled while there is an
   unapplied sorted load order. In that state, the action copies the unapplied
   load order, rather than the game's current saved load order.
+- Qt's fusion style is now the default on Windows 10 and Windows 11, instead of
+  the windowsvista style. Unlike windowsvista, fusion allows LOOT's default
+  theme to be used in dark or light variants, and those variants can be used
+  following the system colour scheme or independent of it.
+- Improved the contrast of some text and border colours in the dark colour
+  scheme variant of the default theme.
 - Windows 11 users can now override the Qt style that LOOT uses by default using
   Qt's ``-style`` CLI argument.
+- The default behaviour on Windows with a dark colour scheme when using the
+  windows11 or fusion Qt styles is to use the system's accent colour as
+  the hyperlink text colour, but depending on the accent colour this can make
+  hyperlinks unreadable due to low contrast. LOOT now overrides the hyperlink
+  text colour to a shade of blue that has good contrast with the dark colour
+  scheme's background colour.
+- The default behaviour on Windows with a dark colour scheme when using the
+  fusion Qt style is to use the system's accent colour as the background
+  colour of checkboxes, but depending on the accent colour this can make it
+  difficult to see if a checkbox is ticked or not. LOOT now overrides the
+  checkbox styling to use a neutral background colour.
 - Unexpected errors in the Groups Editor that could potentially crash LOOT will
   now display an error message dialog box instead.
 - Updated LOOT's list of known official plugins for Skyrim SE, Starfield and
   Fallout 4.
+- LOOT now logs a warning when it tries to retrieve data for a plugin in the
+  load order that hasn't been loaded.
 - LOOT now supports v0.29 of the metadata syntax.
+- User-visible copyright notices now use "The LOOT Contributors" as the
+  copyright holder, and the docs author and executable publisher is now "The
+  LOOT Team".
 - Updated Boost to v1.90.0.
 - Updated fmt to v12.1.0.
-- Updated libloot to v0.29.2.
+- Updated libloot to v0.29.3.
 - Updated libtbb used by the Flatpak build to v2022.3.0.
 - Updated minizip-ng to v4.1.0.
 - Updated OGDF to foxglove-202510.
+- Updated Qt to v6.10.3.
 - Updated spdlog to v1.17.0.
 - Updated zlib to v1.3.2.
 - Updated the Bulgarian translation.
@@ -276,7 +462,8 @@ Changed
 0.25.1 - 2025-03-15
 ===================
 
-This version was tagged but never fully released due to an issue found during the release process.
+This version was tagged but never fully released due to an issue found during
+the release process.
 
 Fixed
 -----
@@ -778,7 +965,8 @@ Added
 
 - Support for the GOG distribution of Fallout 4.
 - LOOT can now find Steam game installs by reading Steam configuration files.
-- LOOT can now find GOG and Epic Games Store games installed using the `Heroic Games Launcher`_.
+- LOOT can now find GOG and Epic Games Store games installed using the
+  `Heroic Games Launcher`_.
 - A "Hide official plugins' cleaning messages" filter.
 - An "Update All Masterlists" action is now available in the File menu. It
   updates the masterlists for all configured games.
@@ -837,7 +1025,9 @@ Changed
 - When running on Linux, LOOT now uses ``$XDG_DATA_HOME/LOOT`` instead of
   ``$XDG_CONFIG_HOME/LOOT`` to store its data, and falls back to using
   ``$HOME/.local/share/LOOT`` instead of ``$HOME/.config/LOOT``.
-- LOOT now supports `v0.21 <https://loot-api.readthedocs.io/en/0.21.0/metadata/changelog.html#id1>`_ of its metadata syntax. Via libloot.
+- LOOT now supports `v0.21
+  <https://loot-api.readthedocs.io/en/0.21.0/metadata/changelog.html#id1>`_
+  of its metadata syntax. Via libloot.
 - The default masterlist branch is now ``v0.21``.
 - The Light Plugin icon has been replaced.
 - Updated Bulgarian translation.
@@ -1056,41 +1246,66 @@ Changed
 Added
 -----
 
-- Mnemonics (Alt keyboard shortcuts) have been added for LOOT's menus and sidebar headings.
+- Mnemonics (Alt keyboard shortcuts) have been added for LOOT's menus and
+  sidebar headings.
 - The groups editor's window position is now saved.
 - The groups editor now has a button to auto-arrange the layout of groups.
-- The groups editor now prompts when exiting without saving and changes have been made.
-- Debug logging now replaces the user's home directory (i.e. the value of ``%USERPROFILE%``) with the literal string ``%USERPROFILE%`` to help avoid the user accidentally revealing their name when sharing their debug log.
-- The Sort Plugins, Update Masterlist, Apply Sorted Load Order and Discard Sorted Load Order toolbar actions have been added to the Game menu so that they can be selected using keyboard navigation.
+- The groups editor now prompts when exiting without saving and changes have
+  been made.
+- Debug logging now replaces the user's home directory (i.e. the value of
+  ``%USERPROFILE%``) with the literal string ``%USERPROFILE%`` to help avoid the
+  user accidentally revealing their name when sharing their debug log.
+- The Sort Plugins, Update Masterlist, Apply Sorted Load Order and Discard
+  Sorted Load Order toolbar actions have been added to the Game menu so that
+  they can be selected using keyboard navigation.
 
 Fixed
 -----
 
 - Groups with only out-edges are now saved when exiting the groups editor.
-- The height of sidebar rows now scales with text line height so that text is not cut off when using Windows text scaling greater than 100%.
-- LOOT's installer no longer double-encodes the settings file when it sets LOOT's language, so non-ASCII text like language names is no longer mangled.
-- LOOT's uninstaller now correctly removes a variety of files and directories that it previously missed.
-- The plugin menu is no longer incorrectly disabled when filtering visible plugins.
-- Refreshing LOOT's content no longer enables the plugin menu with no plugin selected.
-- The general information card could be sized incorrectly when switching between games.
-- Plugin card heights could be calculated incorrectly when changing the width of the cards list.
-- LOOT no longer logs an unnecessary error when downloading a masterlist for the first time.
-- LOOT no longer logs an unnecessary error when setting group positions in the groups editor for the first time.
+- The height of sidebar rows now scales with text line height so that text is
+  not cut off when using Windows text scaling greater than 100%.
+- LOOT's installer no longer double-encodes the settings file when it sets
+  LOOT's language, so non-ASCII text like language names is no longer mangled.
+- LOOT's uninstaller now correctly removes a variety of files and directories
+  that it previously missed.
+- The plugin menu is no longer incorrectly disabled when filtering visible
+  plugins.
+- Refreshing LOOT's content no longer enables the plugin menu with no plugin
+  selected.
+- The general information card could be sized incorrectly when switching between
+  games.
+- Plugin card heights could be calculated incorrectly when changing the width of
+  the cards list.
+- LOOT no longer logs an unnecessary error when downloading a masterlist for the
+  first time.
+- LOOT no longer logs an unnecessary error when setting group positions in the
+  groups editor for the first time.
 
 Changed
 -------
 
-- Disabling the warnings and errors filter now restores its component filters' previous states instead of disabling all of them.
-- The text for sources displayed on plugin cards can now wrap around to new lines.
+- Disabling the warnings and errors filter now restores its component filters'
+  previous states instead of disabling all of them.
+- The text for sources displayed on plugin cards can now wrap around to new
+  lines.
 - Keyboard navigation of the user interface has been improved:
 
-  - Navigating between elements using the Tab key now does so in a more intuitive order in the filters sidebar, groups editor, game settings panel, new game dialog and settings dialog.
-  - The table views in the plugins sidebar panel and plugin metadata editor and the game registry keys text box no longer prevent the Tab key from being used to move from them to the next UI element.
-  - The message content editor dialog no longer closes if the Tab key is pressed while it is open.
-  - The step size for the minimum header version game setting input has been changed from 1 to 0.01.
+  - Navigating between elements using the Tab key now does so in a more
+    intuitive order in the filters sidebar, groups editor, game settings panel,
+    new game dialog and settings dialog.
+  - The table views in the plugins sidebar panel and plugin metadata editor and
+    the game registry keys text box no longer prevent the Tab key from being
+    used to move from them to the next UI element.
+  - The message content editor dialog no longer closes if the Tab key is pressed
+    while it is open.
+  - The step size for the minimum header version game setting input has been
+    changed from 1 to 0.01.
 
-- The group nodes (circles) in the groups editor now have a little padding to make selecting them easier.
-- Theme changes are now applied when saving and exiting the settings dialog, instead of when LOOT starts.
+- The group nodes (circles) in the groups editor now have a little padding to
+  make selecting them easier.
+- Theme changes are now applied when saving and exiting the settings dialog,
+  instead of when LOOT starts.
 - Updated the Bulgarian translation.
 - Updated the Finnish translation.
 - Updated the French translation.
@@ -1418,7 +1633,9 @@ Changed
   differentiate them from the other files and folders in
   ``%LOCALAPPDATA%\LOOT``. LOOT will migrate each existing game folder to the
   new location when it is run for that game.
-- LOOT now supports `v0.18 <https://loot-api.readthedocs.io/en/0.18.0/metadata/changelog.html#id1>`_ of its metadata syntax.
+- LOOT now supports `v0.18
+  <https://loot-api.readthedocs.io/en/0.18.0/metadata/changelog.html#id1>`_
+  of its metadata syntax.
 - Updated the Bulgarian translation.
 - Updated the Czech translation.
 - Updated the German translation.
@@ -1449,26 +1666,36 @@ Added
 - Support for multiple registry keys per game.
 - Support for registry keys in the 64-bit registry view.
 - Steam and GOG registry keys for all supported games on each platform.
-- Support for the masterlist prelude, a metadata file that is used to supply common metadata to all masterlists.
+- Support for the masterlist prelude, a metadata file that is used to supply
+  common metadata to all masterlists.
 - The ability to filter plugins by their group.
-- The ``detail`` message string is now appended when generating requirement and incompatibility messages.
+- The ``detail`` message string is now appended when generating requirement and
+  incompatibility messages.
 - A Ukrainian translation by IllusiveMan196.
 
 Fixed
 -----
 
-- LOOT will only attempt to start for the preferred game if it is installed, and will otherwise fall back to the first listed installed game.
+- LOOT will only attempt to start for the preferred game if it is installed, and
+  will otherwise fall back to the first listed installed game.
 - Autocomplete error translations were unused.
 - Some groups editor text was untranslatable.
 
 Changed
 -------
 
-- The groups editor now has a "drawing mode" toggle button. Edges can only be added in drawing mode, and nodes can only be moved around outside of drawing mode.
-- The Skyrim VR and Fallout VR games now use new ``skyrimvr`` and ``falloutvr`` masterlist repositories. The new repositories are independent from the ``skyrimse`` and ``fallout4`` repositories that were previously used.
-- LOOT's installer now downloads the latest MSVC 2015/2017/2019 redistributable if it is not already installed, or if it is older than 14.15.26706.
-- Sorting now checks for cycles before adding overlap edges, so that any cycles are caught before the slowest steps in the sorting process. Via libloot.
-- Masterlist update no longer supports rolling back through revisions until a revision that can be successfully loaded is found. Via libloot.
+- The groups editor now has a "drawing mode" toggle button. Edges can only be
+  added in drawing mode, and nodes can only be moved around outside of drawing
+  mode.
+- The Skyrim VR and Fallout VR games now use new ``skyrimvr`` and ``falloutvr``
+  masterlist repositories. The new repositories are independent from the
+  ``skyrimse`` and ``fallout4`` repositories that were previously used.
+- LOOT's installer now downloads the latest MSVC 2015/2017/2019 redistributable
+  if it is not already installed, or if it is older than 14.15.26706.
+- Sorting now checks for cycles before adding overlap edges, so that any cycles
+  are caught before the slowest steps in the sorting process. Via libloot.
+- Masterlist update no longer supports rolling back through revisions until a
+  revision that can be successfully loaded is found. Via libloot.
 - Updated libloot to v0.17.1.
 - Updated nlohmann/json to v0.17.0.
 - Updated spdlog to v1.9.2.
@@ -2286,17 +2513,25 @@ Fixed
 Added
 -----
 
-- LOOT now creates a backup of the existing load order when applying a sorted load order. The backup is stored in LOOT's folder for the current game, and up to the three most recent backups are retained.
+- LOOT now creates a backup of the existing load order when applying a sorted
+  load order. The backup is stored in LOOT's folder for the current game, and up
+  to the three most recent backups are retained.
 
 Changed
 -------
 
-- If no game is detected when LOOT is launched and a valid game path or Registry key pointing to a game path is added in the Settings dialog, LOOT will select that game and refresh its content when the new settings are applied.
-- Most exception-derived errors now display a generic error message, as exception messages are no longer translatable. Only metadata syntax exceptions still have their message displayed in the UI.
+- If no game is detected when LOOT is launched and a valid game path or Registry
+  key pointing to a game path is added in the Settings dialog, LOOT will select
+  that game and refresh its content when the new settings are applied.
+- Most exception-derived errors now display a generic error message, as
+  exception messages are no longer translatable. Only metadata syntax exceptions
+  still have their message displayed in the UI.
 - Improved robustness of error handling when calculating file CRCs.
 - Improved consistency of error logging.
-- Errors and warnings are now always logged, even when debug logging is disabled.
-- The First Time Tips and About dialogs are now fully translatable, with the exception of the legal text in the About dialog.
+- Errors and warnings are now always logged, even when debug logging is
+  disabled.
+- The First Time Tips and About dialogs are now fully translatable, with the
+  exception of the legal text in the About dialog.
 - Updated Russian translation.
 
 Fixed
@@ -2304,13 +2539,20 @@ Fixed
 
 - A crash on startup if none of the supported games were detected.
 - A crash when applying settings when none of the supported games are detected.
-- Buttons and menu items for performing game-specific operations are now disabled while none of the supported games are detected.
+- Buttons and menu items for performing game-specific operations are now
+  disabled while none of the supported games are detected.
 - Initialisation error messages were formatted incorrectly.
-- An error message reading ``Cannot read property 'textContent' of undefined`` could be displayed on startup due to UI elements initialising later than expected.
+- An error message reading ``Cannot read property 'textContent' of undefined``
+  could be displayed on startup due to UI elements initialising later than
+  expected.
 - The texts of the first plugin card and sidebar item were not being translated.
-- LOOT now logs being unable to find a game's registry entry as ``[info]``, not ``[error]``.
-- If an error was encountered while loading a userlist, constructing the error message produced a ``boost::too_many_args`` error that obscured the original error.
-- The installer now checks for v14.0.24215 of the MSVC Redistributable, it was previously checking for v14.0.24212, which some users found insufficient.
+- LOOT now logs being unable to find a game's registry entry as ``[info]``, not
+  ``[error]``.
+- If an error was encountered while loading a userlist, constructing the error
+  message produced a ``boost::too_many_args`` error that obscured the original
+  error.
+- The installer now checks for v14.0.24215 of the MSVC Redistributable, it was
+  previously checking for v14.0.24212, which some users found insufficient.
 
 
 0.10.2 - 2016-12-03
@@ -2319,14 +2561,19 @@ Fixed
 Added
 -----
 
-- Support for specifying the path to use for LOOT's local data storage, via the ``--loot-data-path`` parameter.
+- Support for specifying the path to use for LOOT's local data storage, via the
+  ``--loot-data-path`` parameter.
 
 Changed
 -------
 
-- The metadata editor now displays an error message when the user inputs invalid priority values, in addition to the input's existing red underline styling for invalid values, and instead of validating the values when trying to save the metadata.
+- The metadata editor now displays an error message when the user inputs invalid
+  priority values, in addition to the input's existing red underline styling for
+  invalid values, and instead of validating the values when trying to save the
+  metadata.
 - LOOT's icon now scales better for high-DPI displays.
-- LOOT's UI is now built as many loose files instead of one large HTML file, to aid debugging and development.
+- LOOT's UI is now built as many loose files instead of one large HTML file, to
+  aid debugging and development.
 - Updated Chinese translation.
 - Updated Chromium Embedded Framework to 3.2840.1517.gd7afec5.
 - Updated libgit2 to 0.24.3.
@@ -2335,16 +2582,26 @@ Changed
 Fixed
 -----
 
-- A crash could occur if some plugins that are hardcoded to always load were missing. Fixed by updating to libloadorder v9.5.4.
-- Plugin cleaning metadata with no ``info`` value generated a warning message with no text.
-- The LOOT update checker will no longer display an empty error dialog if the update check is unable to connect to the GitHub API (eg. if offline).
-- Redate Plugins was accidentally disabled for Skyrim SE in v0.10.1, and had no effect for Skyrim SE in v0.10.0.
-- Having more than ~ 100 plugins installed could make the sidebar's plugin list appear on top of dialogs.
+- A crash could occur if some plugins that are hardcoded to always load were
+  missing. Fixed by updating to libloadorder v9.5.4.
+- Plugin cleaning metadata with no ``info`` value generated a warning message
+  with no text.
+- The LOOT update checker will no longer display an empty error dialog if the
+  update check is unable to connect to the GitHub API (eg. if offline).
+- Redate Plugins was accidentally disabled for Skyrim SE in v0.10.1, and had no
+  effect for Skyrim SE in v0.10.0.
+- Having more than ~ 100 plugins installed could make the sidebar's plugin list
+  appear on top of dialogs.
 - More UI text has been made available for translation.
 - Tweak some text formatting to include more context for translators.
-- Dirty plugin warning messages now distinguish between singular and plural forms for their ITM, deleted reference and deleted navmesh counts, to allow the construction of more grammatically-correct messages in English and other languages.
-- The UI text for the metadata editor was always displayed in English even when LOOT was set to use another language, despite translations being available.
-- It was possible to open the metadata editor during sorting by double-clicking a plugin in the sidebar.
+- Dirty plugin warning messages now distinguish between singular and plural
+  forms for their ITM, deleted reference and deleted navmesh counts, to allow
+  the construction of more grammatically-correct messages in English and other
+  languages.
+- The UI text for the metadata editor was always displayed in English even when
+  LOOT was set to use another language, despite translations being available.
+- It was possible to open the metadata editor during sorting by double-clicking
+  a plugin in the sidebar.
 - Removed a duplicate section in the documentation for editing metadata.
 
 0.10.1 - 2016-11-12
@@ -2353,17 +2610,30 @@ Fixed
 Changed
 -------
 
-- When saving a load order for Fallout 4 or Skyrim SE, the official plugins (including DLC plugins) are no longer written to ``plugins.txt`` to match game behaviour and improve interoperability with other modding utilities.
-- LOOT now uses ``Skyrim Special Edition`` as the folder name for storing its Skyrim SE data, to mirror the game's own folder naming and improve interoperability with other modding utilities, and automatically renames any ``SkyrimSE`` folder created by LOOT v0.10.0.
+- When saving a load order for Fallout 4 or Skyrim SE, the official plugins
+  (including DLC plugins) are no longer written to ``plugins.txt`` to match game
+  behaviour and improve interoperability with other modding utilities.
+- LOOT now uses ``Skyrim Special Edition`` as the folder name for storing its
+  Skyrim SE data, to mirror the game's own folder naming and improve
+  interoperability with other modding utilities, and automatically renames any
+  ``SkyrimSE`` folder created by LOOT v0.10.0.
 - Updated Russian translation.
 - Updated Chinese translation.
 
 Fixed
 -----
 
-- When saving a load order for Fallout 4 or Skyrim SE, the positions of official plugins (including DLC plugins) in ``plugins.txt`` are now ignored if they are present and a hardcoded order used instead. Note that there is a bug in Skyrim SE v1.2.39 that causes the DLC plugins to be loaded in timestamp order: this behaviour is ignored.
-- If the LOOT installer installed the MSVC redistributable, the latter would silently force a restart, leading to possible data loss.
-- It was possible to open the metadata editor between sorting and applying/cancelling a sorted load order, which would then cause an error when trying to close the editor. The editor is now correctly disabled during the sort process.
+- When saving a load order for Fallout 4 or Skyrim SE, the positions of official
+  plugins (including DLC plugins) in ``plugins.txt`` are now ignored if they are
+  present and a hardcoded order used instead. Note that there is a bug in Skyrim
+  SE v1.2.39 that causes the DLC plugins to be loaded in timestamp order: this
+  behaviour is ignored.
+- If the LOOT installer installed the MSVC redistributable, the latter would
+  silently force a restart, leading to possible data loss.
+- It was possible to open the metadata editor between sorting and
+  applying/cancelling a sorted load order, which would then cause an error when
+  trying to close the editor. The editor is now correctly disabled during the
+  sort process.
 
 
 0.10.0 - 2016-11-06
@@ -2374,16 +2644,27 @@ Added
 
 - Support for TES V: Skyrim Special Edition.
 - Swedish translation by Mikael Hiort af Ornäs (Lakrits).
-- More robust update checker, so now LOOT will notify users of an update without needing a masterlist to be present or for it to be updated for the new release, and will also detect when the user is using a non-release build with the same version number.
+- More robust update checker, so now LOOT will notify users of an update without
+  needing a masterlist to be present or for it to be updated for the new
+  release, and will also detect when the user is using a non-release build with
+  the same version number.
 
 Changed
 -------
 
-- LOOT now supports v0.10 of the metadata syntax. This breaks compatibility with existing syntax, which may cause existing user metadata to fail to load. See `the syntax version history <https://loot-api.readthedocs.io/en/0.10.3/metadata/changelog.html#id1>`_ for the details.
-- The Global Priority toggle button in the metadata editor has been replaced with an input field to reflect the change in syntax for global priorities.
-- Added a "Clean Plugin Info" tab to the metadata editor, for editing metadata that identifies a plugin as being clean.
-- Added a "Verified clean" icon to plugin cards that is displayed for plugins that are identified as clean.
-- All operations triggered from the UI are now processed asynchronously, which may have a minor positive effect on perceived performance.
+- LOOT now supports v0.10 of the metadata syntax. This breaks compatibility with
+  existing syntax, which may cause existing user metadata to fail to load. See
+  `the syntax version history
+  <https://loot-api.readthedocs.io/en/0.10.3/metadata/changelog.html#id1>`_ for
+  the details.
+- The Global Priority toggle button in the metadata editor has been replaced
+  with an input field to reflect the change in syntax for global priorities.
+- Added a "Clean Plugin Info" tab to the metadata editor, for editing metadata
+  that identifies a plugin as being clean.
+- Added a "Verified clean" icon to plugin cards that is displayed for plugins
+  that are identified as clean.
+- All operations triggered from the UI are now processed asynchronously, which
+  may have a minor positive effect on perceived performance.
 - Error messages displayed in dialog boxes no longer include an error code.
 - Rewrote the documentation, which is now hosted online at `Read The Docs`_.
 - Updated Simplified Chinese translation.
@@ -2399,10 +2680,13 @@ Fixed
 
 - Cached plugin CRCs causing checksum conditions to always evaluate to false.
 - Data being loaded twice when launching LOOT.
-- Updating the masterlist when the user's ``TEMP`` and ``TMP`` environmental variables point to a different drive than the one LOOT is installed on.
+- Updating the masterlist when the user's ``TEMP`` and ``TMP`` environmental
+  variables point to a different drive than the one LOOT is installed on.
 - Incorrect error message display when there was an issue during initialisation.
-- Sidebar plugin load order indices not updating when sorting changed plugin positions.
-- The "Has User Metadata" icon not displaying when priority metadata was changed.
+- Sidebar plugin load order indices not updating when sorting changed plugin
+  positions.
+- The "Has User Metadata" icon not displaying when priority metadata was
+  changed.
 
 0.9.2 - 2016-08-03
 ==================
@@ -2411,30 +2695,43 @@ Added
 -----
 
 - Theming support and the dark theme have been reimplemented and reintroduced.
-- Plugin filename and Bash Tag name fields will now autocomplete in the metadata editor.
-- The in-game load order indices of active plugins are now displayed in the sidebar.
+- Plugin filename and Bash Tag name fields will now autocomplete in the metadata
+  editor.
+- The in-game load order indices of active plugins are now displayed in the
+  sidebar.
 
 Changed
 -------
 
 - Most URLs now use HTTPS.
 - The Danish and French translations have been updated.
-- The CEF (3.2743.1442.ge29124d), libespm (2.5.5), Polymer (1.6.0) and Pseudosem (1.1.0) dependencies have been updated to the versions given in brackets.
+- The CEF (3.2743.1442.ge29124d), libespm (2.5.5), Polymer (1.6.0) and Pseudosem
+  (1.1.0) dependencies have been updated to the versions given in brackets.
 
 Fixed
 -----
 
 - Error when applying filters on startup.
 - Hidden plugin and message counters not updating correctly after sorting.
-- An error occurring when the user's temporary files directory didn't exist and updating the masterlist tried to create a directory there.
-- The installer failing if LOOT was previously installed on a drive that no longer exists. The installer now always gives the option to change the default install path it selects.
-- Startup errors being reported incorrectly and causing additional errors that prevented the user from being informed of the original issue.
-- The metadata editor's CRC input field being too short to fully display its validation error message.
-- Errors when reading some Oblivion plugins during sorting, including the official DLC.
+- An error occurring when the user's temporary files directory didn't exist and
+  updating the masterlist tried to create a directory there.
+- The installer failing if LOOT was previously installed on a drive that no
+  longer exists. The installer now always gives the option to change the default
+  install path it selects.
+- Startup errors being reported incorrectly and causing additional errors that
+  prevented the user from being informed of the original issue.
+- The metadata editor's CRC input field being too short to fully display its
+  validation error message.
+- Errors when reading some Oblivion plugins during sorting, including the
+  official DLC.
 - Some cases where LOOT would fail to start.
-- The conflict filter not including the Unofficial Skyrim Legendary Edition Patch's plugin (and any other plugin that overrides a very large number of records) in results.
-- The "not sorted" message reappearing if the load order was sorted twice in one session and cancelled the second time.
-- Version numbers where a digit was immediately followed by a letter not being detected.
+- The conflict filter not including the Unofficial Skyrim Legendary Edition
+  Patch's plugin (and any other plugin that overrides a very large number of
+  records) in results.
+- The "not sorted" message reappearing if the load order was sorted twice in one
+  session and cancelled the second time.
+- Version numbers where a digit was immediately followed by a letter not being
+  detected.
 
 0.9.1 - 2016-06-23
 ==================
@@ -2442,16 +2739,22 @@ Fixed
 Added
 -----
 
-- Support for Fallout 4's Contraptions Workshop DLC, and the upcoming Vault-Tec Workshop and Nuka-World DLC. Support for the latter two is based on their probable but unconfirmed plugin names, which may be subject to change.
+- Support for Fallout 4's Contraptions Workshop DLC, and the upcoming Vault-Tec
+  Workshop and Nuka-World DLC. Support for the latter two is based on their
+  probable but unconfirmed plugin names, which may be subject to change.
 
 Changed
 -------
 
 - The content refresh menu item is now disabled during sorting.
-- The conflicts filter toggle buttons have been removed from the plugin card menus, and the filter re-implemented as a dropdown menu of plugin names in the Filters sidebar tab.
-- Enabling the conflicts filter now scrolls to the target plugin, which is no longer highlighted with a blue border.
+- The conflicts filter toggle buttons have been removed from the plugin card
+  menus, and the filter re-implemented as a dropdown menu of plugin names in the
+  Filters sidebar tab.
+- Enabling the conflicts filter now scrolls to the target plugin, which is no
+  longer highlighted with a blue border.
 - The layout of the Filters sidebar tab has been improved.
-- The CEF (3.2704.1427.g95055fe), and libloadorder (9.4.0) dependencies have been updated to the versions given in brackets.
+- The CEF (3.2704.1427.g95055fe), and libloadorder (9.4.0) dependencies have
+  been updated to the versions given in brackets.
 - Some code has been refactored to improve its quality.
 
 Removed
@@ -2463,7 +2766,8 @@ Fixed
 -----
 
 - User dirty metadata being read-only in the metadata editor.
-- LOOT incorrectly reading a tag with no name from plugin descriptions containing ``{{BASH:}}``.
+- LOOT incorrectly reading a tag with no name from plugin descriptions
+  containing ``{{BASH:}}``.
 
 0.9.0 - 2016-05-21
 ==================
@@ -2472,50 +2776,81 @@ Added
 -----
 
 - Support for Fallout 4.
-- A warning message is displayed in the General Information card if the user has not sorted their load order in the current LOOT session.
-- An error message is displayed in the General Information card when a cyclic interaction sorting error is encountered, and remains there until sorting is next attempted.
+- A warning message is displayed in the General Information card if the user has
+  not sorted their load order in the current LOOT session.
+- An error message is displayed in the General Information card when a cyclic
+  interaction sorting error is encountered, and remains there until sorting is
+  next attempted.
 
 Changed
 -------
 
-- Improve sorting performance by only reading the header when loading game's main master file.
-- References to "BSAs" have been replaced with the more generic "Archives" as Fallout 4's BSA equivalents use a different file extension.
-- The sorting process now recognises when the sorted load order is identical to the existing load order and informs the user, avoiding unnecessary filesystem interaction.
-- The metadata editor has been reimplemented as a single resizeable panel displayed below the plugin card list instead of a separate editor for each plugin card.
-- Editable table styling has been improved to more closely align to the Material Design guidelines.
-- Minor UI changes have been made to scrollbar and focus outline styling to improve accessibility.
-- UI interaction performance has been improved, especially when scrolling the plugin card list.
-- The PayPal donation link now points to the PayPal.Me service, which has a more polished UX and lower fees.
-- LOOT's settings file handling has been reimplemented, fixing crashes due to invalid settings values and allowing missing settings to use their default values.
-- Plugin version string extraction has been reimplemented, improving its accuracy and maintainability.
-- Plugin CRC, file and version condition evaluation has been optimised to use cached data where it exists, avoiding unnecessary filesystem interaction.
+- Improve sorting performance by only reading the header when loading game's
+  main master file.
+- References to "BSAs" have been replaced with the more generic "Archives" as
+  Fallout 4's BSA equivalents use a different file extension.
+- The sorting process now recognises when the sorted load order is identical to
+  the existing load order and informs the user, avoiding unnecessary filesystem
+  interaction.
+- The metadata editor has been reimplemented as a single resizeable panel
+  displayed below the plugin card list instead of a separate editor for each
+  plugin card.
+- Editable table styling has been improved to more closely align to the Material
+  Design guidelines.
+- Minor UI changes have been made to scrollbar and focus outline styling to
+  improve accessibility.
+- UI interaction performance has been improved, especially when scrolling the
+  plugin card list.
+- The PayPal donation link now points to the PayPal.Me service, which has a more
+  polished UX and lower fees.
+- LOOT's settings file handling has been reimplemented, fixing crashes due to
+  invalid settings values and allowing missing settings to use their default
+  values.
+- Plugin version string extraction has been reimplemented, improving its
+  accuracy and maintainability.
+- Plugin CRC, file and version condition evaluation has been optimised to use
+  cached data where it exists, avoiding unnecessary filesystem interaction.
 - The French and Danish translations have been updated.
-- The installer now only creates one shortcut for LOOT in the Start menu, following Microsoft guidelines.
+- The installer now only creates one shortcut for LOOT in the Start menu,
+  following Microsoft guidelines.
 - A lot of code has been refactored and improved to increase its quality.
-- The Boost (1.60), CEF (3.2623.1401.gb90a3be), libespm (2.5.2), libgit2 (0.24.1), libloadorder (9.3.0) and Polymer (1.4) dependencies have been updated to the versions given in brackets.
+- The Boost (1.60), CEF (3.2623.1401.gb90a3be), libespm (2.5.2), libgit2
+  (0.24.1), libloadorder (9.3.0) and Polymer (1.4) dependencies have been
+  updated to the versions given in brackets.
 
 Removed
 -------
 
 - The Flattr donation link.
-- The experimental theming support, as its implementation was incompatible with Polymer 1.2's styling mechanisms.
+- The experimental theming support, as its implementation was incompatible with
+  Polymer 1.2's styling mechanisms.
 
 Fixed
 -----
 
-- Redate Plugins attempted to redate plugins that were missing, causing an error.
-- LOOT would not launch when run by a user with a non-ASCII local application data path.
-- Sorting processed priority value inheritance throughout the load order incorrectly, leading to some plugins being positioned incorrectly.
-- The conflict filter displayed only the target plugin when enabled for the first time in a session.
+- Redate Plugins attempted to redate plugins that were missing, causing an
+  error.
+- LOOT would not launch when run by a user with a non-ASCII local application
+  data path.
+- Sorting processed priority value inheritance throughout the load order
+  incorrectly, leading to some plugins being positioned incorrectly.
+- The conflict filter displayed only the target plugin when enabled for the
+  first time in a session.
 - The behaviour of the search functionality was inconsistent.
 - Duplicate messages could be displayed under certain circumstances.
-- Opening the metadata editor for one plugin displayed the metadata for another plugin under certain circumstances.
+- Opening the metadata editor for one plugin displayed the metadata for another
+  plugin under certain circumstances.
 - Changing the current game quickly could leave the UI unresponsive.
-- Applying a filter then scrolling the plugin card list would display some cards with no content.
-- Plugin cards would disappearing when jumping to a plugin card near the bottom of the load order using the sidebar.
-- Clicking on a disabled element in a dropdown menu would cause the menu to close.
-- The UI font size was too large, due to a misunderstanding of the Material Design guidelines.
-- Attempting to build native Linux and 64-bit executables produced errors. Such builds are unsupported and no official builds are planned.
+- Applying a filter then scrolling the plugin card list would display some cards
+  with no content.
+- Plugin cards would disappearing when jumping to a plugin card near the bottom
+  of the load order using the sidebar.
+- Clicking on a disabled element in a dropdown menu would cause the menu to
+  close.
+- The UI font size was too large, due to a misunderstanding of the Material
+  Design guidelines.
+- Attempting to build native Linux and 64-bit executables produced errors. Such
+  builds are unsupported and no official builds are planned.
 
 0.8.1 - 2015-09-27
 ==================
@@ -2535,7 +2870,8 @@ Fixed
 -----
 
 - Crash when loading plugins due to lack of thread safety.
-- The masterlist updater and validator not checking for valid condition and regex syntax.
+- The masterlist updater and validator not checking for valid condition and
+  regex syntax.
 - The masterlist updater not working correctly for Windows Vista users.
 
 0.8.0 - 2015-07-22
@@ -2550,12 +2886,15 @@ Changed
 -------
 
 - Improved detail of metadata syntax error messages.
-- Improved plugin loading performance for computers with weaker multithreading capabilities (eg. non-hyperthreaded dual-core or single-core CPUs).
+- Improved plugin loading performance for computers with weaker multithreading
+  capabilities (eg. non-hyperthreaded dual-core or single-core CPUs).
 - LOOT no longer displays validity warnings for inactive plugins.
-- LOOT now displays a more user-friendly error when a syntax error is encountered in an updated masterlist.
+- LOOT now displays a more user-friendly error when a syntax error is
+  encountered in an updated masterlist.
 - Metadata syntax support changes, see the metadata syntax document for details.
 - LOOT's installer now uses Inno Setup instead of NSIS.
-- LOOT's installer now uninstalls previous versions of LOOT silently, preserving user data, instead of displaying the uninstaller UI.
+- LOOT's installer now uninstalls previous versions of LOOT silently, preserving
+  user data, instead of displaying the uninstaller UI.
 - Updated German and Russian translations.
 - Updated libgit2 to v0.23.0.
 
@@ -2563,11 +2902,14 @@ Fixed
 -----
 
 - "Cannot read property 'push' of undefined" errors when sorting.
-- Many miscellaneous bugs, including initialisation crashes and incorrect metadata input/output handling.
+- Many miscellaneous bugs, including initialisation crashes and incorrect
+  metadata input/output handling.
 - Metadata editors not clearing unsaved edits when editing is cancelled.
-- LOOT silently discarding some non-unique metadata: an error message will now be displayed when loading or attempting to apply such metadata.
+- LOOT silently discarding some non-unique metadata: an error message will now
+  be displayed when loading or attempting to apply such metadata.
 - Userlist parsing errors being saved as general messages in the userlist.
-- LOOT's version comparison behaviour for a wide variety of version string formats. This involved removing LOOT's usage of the Alphanum code library.
+- LOOT's version comparison behaviour for a wide variety of version string
+  formats. This involved removing LOOT's usage of the Alphanum code library.
 
 0.7.1 - 2015-06-22
 ==================
@@ -2575,14 +2917,17 @@ Fixed
 Added
 -----
 
-- Content search, accessible from an icon button in the header bar, and using the Ctrl-F keyboard shortcut.
+- Content search, accessible from an icon button in the header bar, and using
+  the Ctrl-F keyboard shortcut.
 - "Copy Load Order" feature to main menu.
 
 Changed
 -------
 
-- LOOT now uses versioned masterlists, so that new features can be used without breaking LOOT for users who haven't yet updated.
-- Moved content filter into Filters sidebar tab. The Ctrl-F keyboard shortcut no longer focusses the content filter.
+- LOOT now uses versioned masterlists, so that new features can be used without
+  breaking LOOT for users who haven't yet updated.
+- Moved content filter into Filters sidebar tab. The Ctrl-F keyboard shortcut no
+  longer focusses the content filter.
 - Checkbox-toggled filters now have their last state restored on launch.
 - Darkened background behind cards to increase contrast.
 - Updated French translation.
@@ -2594,7 +2939,8 @@ Fixed
 - "No existing load order position" errors when sorting.
 - Message filters being ignored by plugin cards after navigating the list.
 - Output of Bash Tag removal suggestions in userlists.
-- Display of masterlist revisions where they were wrongly interpreted as numbers.
+- Display of masterlist revisions where they were wrongly interpreted as
+  numbers.
 
 0.7.0 - 2015-05-20
 ==================
@@ -2603,38 +2949,62 @@ Added
 -----
 
 - Danish and Korean translations.
-- If LOOT can't detect any installed games, it now launches to the settings dialog, where the game settings can be edited to allow a game to be detected.
-- A "Copy Content" item in the main menu, to copy the plugin list and all information it contains to the clipboard as YAML-formatted text.
-- A "Refresh Content" item in the main menu, which re-scans plugin headers and updates LOOT's content.
+- If LOOT can't detect any installed games, it now launches to the settings
+  dialog, where the game settings can be edited to allow a game to be detected.
+- A "Copy Content" item in the main menu, to copy the plugin list and all
+  information it contains to the clipboard as YAML-formatted text.
+- A "Refresh Content" item in the main menu, which re-scans plugin headers and
+  updates LOOT's content.
 - LOOT is now built with High DPI display support.
 - Masterlist updates can now be performed independently of sorting.
-- A "First-Time Tips" dialog will be displayed on the first run of any particular version of LOOT.
-- Attempting to close LOOT with an unapplied sorted load order or an open plugin editor will trigger a confirmation dialog.
-- Support for GitHub Flavored Markdown in messages, minus features specific to the GitHub site, such as @mentions and emoji.
+- A "First-Time Tips" dialog will be displayed on the first run of any
+  particular version of LOOT.
+- Attempting to close LOOT with an unapplied sorted load order or an open plugin
+  editor will trigger a confirmation dialog.
+- Support for GitHub Flavored Markdown in messages, minus features specific to
+  the GitHub site, such as @mentions and emoji.
 - Support for message content substitution metadata syntax in the masterlist.
 - Display of LOOT's build revision has been added to the "About" dialog.
 - Plugin location metadata can now be added through the user interface.
-- A content filter, which hides plugins that don't have the filter text present in their filenames, versions, CRCs, Bash Tags or messages.
+- A content filter, which hides plugins that don't have the filter text present
+  in their filenames, versions, CRCs, Bash Tags or messages.
 
 Changed
 -------
 
-- New single-window HTML5-based interface and a new icon, based on Google's Material Design.
+- New single-window HTML5-based interface and a new icon, based on Google's
+  Material Design.
 
-  - LOOT now parses the masterlist and plugin headers on startup, and the resulting content is displayed with the plugins in their current load order.
-  - Each plugin now has its own editor, and multiple editors can be opened at once.
-  - Drag 'n' drop of plugins from the sidebar into metadata editor tables no longer requires the conflicts filter to be enabled.
-  - CRCs are calculated during conflict filtering or sorting, so are notdisplayed until either process has been performed.
-  - The "View Debug Log" menu item has been replaced with a "Open Debug Log Location" menu item to make it easier to share the file itself.
-  - Debug logging control has been simplified to enable/disable, replacing the "Debug Verbosity" setting with an "Enable Debug Logging" toggle.
+  - LOOT now parses the masterlist and plugin headers on startup, and the
+    resulting content is displayed with the plugins in their current load order.
+  - Each plugin now has its own editor, and multiple editors can be opened at
+    once.
+  - Drag 'n' drop of plugins from the sidebar into metadata editor tables no
+    longer requires the conflicts filter to be enabled.
+  - CRCs are calculated during conflict filtering or sorting, so are
+    notdisplayed until either process has been performed.
+  - The "View Debug Log" menu item has been replaced with a "Open Debug Log
+    Location" menu item to make it easier to share the file itself.
+  - Debug logging control has been simplified to enable/disable, replacing the
+    "Debug Verbosity" setting with an "Enable Debug Logging" toggle.
   - Changes to game settings now take immediate effect.
-  - Masterlist updating now exits earlier if the masterlist is already up-to-date.
-  - Masterlist revisions are now displayed using the shortest unique substring that is at least 7 characters long.
-  - Making edits to plugin metadata before applying a calculated load order no longer causes LOOT to recalculate the load order. Instead, the displayed load order is applied, and the metadata edits will be applied the next time sorting is performed.
-  - All references to "UDRs" have been replaced by the more technically-correct "Deleted References" term.
-  - The "Hide inactive plugin messages" filter has been replaced by a "Hide inactive plugins" filter.
-  - Copied metadata is now wrapped in BBCode ``[spoiler][code]...[/code][/spoiler]`` tags for easier pasting into forum posts.
-  - The Summary and General Messages cards have been combined into a General Information card.
+  - Masterlist updating now exits earlier if the masterlist is already
+    up-to-date.
+  - Masterlist revisions are now displayed using the shortest unique substring
+    that is at least 7 characters long.
+  - Making edits to plugin metadata before applying a calculated load order no
+    longer causes LOOT to recalculate the load order. Instead, the displayed
+    load order is applied, and the metadata edits will be applied the next time
+    sorting is performed.
+  - All references to "UDRs" have been replaced by the more technically-correct
+    "Deleted References" term.
+  - The "Hide inactive plugin messages" filter has been replaced by a "Hide
+    inactive plugins" filter.
+  - Copied metadata is now wrapped in BBCode
+    ``[spoiler][code]...[/code][/spoiler]`` tags for easier pasting into forum
+    posts.
+  - The Summary and General Messages cards have been combined into a General
+    Information card.
 
 - Sorting performance improvements.
 - Updated Boost (1.58.0), libgit2 (0.22.2) and libloadorder dependencies.
@@ -2642,25 +3012,43 @@ Changed
 Removed
 -------
 
-- Messages with multiple language strings can no longer be created through the user interface. User-added multiple-language messages will be converted to single-language strings if their plugin's editor is opened then closed using the "OK" button.
-- The "Copy Name" menu item has been removed, as plugin names can now be selected and copied using ``Ctrl-C``.
+- Messages with multiple language strings can no longer be created through the
+  user interface. User-added multiple-language messages will be converted to
+  single-language strings if their plugin's editor is opened then closed using
+  the "OK" button.
+- The "Copy Name" menu item has been removed, as plugin names can now be
+  selected and copied using ``Ctrl-C``.
 - As LOOT no longer generates reports, it doesn't save them either.
 
 Fixed
 -----
 
 - The ``settings.yaml`` included with the installer was very old.
-- Inactive incompatibilities were displayed as error messages. They are now displayed as warnings.
-- Masterlist entries that matched the same plugin were not being merged. Now one exact match and any number of regex matches will be merged.
-- Masterlist updating failed when a fast-forward merge was not possible (eg. when remote has been rebased, or a different repository is used). Such cases are now handled by deleting the local repository and re-cloning the remote.
-- Masterlist updating failed when the path to LOOT's folder included a junction link.
-- Masterlists would not 'update' to older revisions. This can be useful for testing, so now they can do so.
-- Crashes when trying to read corrupt plugins and after masterlist update completion.
-- LOOT would crash when trying to detect a game installed to a location in which the user does not have read permissions, now such games are treated as not being installed.
-- Plugins with non-ASCII description text would cause ``codecvt to wstring`` errors.
-- LOOT would accept any file with a ``.esp`` or ``.esm`` extension as a plugin. It now checks more thoroughly, by attempting to parse such files' headers.
-- LOOT would only detect Skyrim plugins as loading BSAs. Plugins for the other games that also load BSAs are now correctly detected as such.
-- Depending on the plugins involved, sorting could produce a different load order every time it was run. Sorting now produces unchanging load orders, using existing load order position where there is no reason to move a plugin.
+- Inactive incompatibilities were displayed as error messages. They are now
+  displayed as warnings.
+- Masterlist entries that matched the same plugin were not being merged. Now one
+  exact match and any number of regex matches will be merged.
+- Masterlist updating failed when a fast-forward merge was not possible (eg.
+  when remote has been rebased, or a different repository is used). Such cases
+  are now handled by deleting the local repository and re-cloning the remote.
+- Masterlist updating failed when the path to LOOT's folder included a junction
+  link.
+- Masterlists would not 'update' to older revisions. This can be useful for
+  testing, so now they can do so.
+- Crashes when trying to read corrupt plugins and after masterlist update
+  completion.
+- LOOT would crash when trying to detect a game installed to a location in which
+  the user does not have read permissions, now such games are treated as not
+  being installed.
+- Plugins with non-ASCII description text would cause ``codecvt to wstring``
+  errors.
+- LOOT would accept any file with a ``.esp`` or ``.esm`` extension as a plugin.
+  It now checks more thoroughly, by attempting to parse such files' headers.
+- LOOT would only detect Skyrim plugins as loading BSAs. Plugins for the other
+  games that also load BSAs are now correctly detected as such.
+- Depending on the plugins involved, sorting could produce a different load
+  order every time it was run. Sorting now produces unchanging load orders,
+  using existing load order position where there is no reason to move a plugin.
 
 0.6.1 - 2014-12-22
 ==================
@@ -2672,8 +3060,10 @@ Added
 
 Changed
 -------
-- Updated Boost (1.57.0), wxWidgets (3.0.2) and libloadorder (6.0.3) dependencies.
-- The game menu is now updated when the settings window is exited with the "OK" button.
+- Updated Boost (1.57.0), wxWidgets (3.0.2) and libloadorder (6.0.3)
+  dependencies.
+- The game menu is now updated when the settings window is exited with the "OK"
+  button.
 - Updated Russian translation.
 - Updated Brazilian Portuguese translation.
 
@@ -2682,19 +3072,24 @@ Fixed
 
 - Default Nehrim registry entry path.
 - Messages in the wrong language being selected.
-- LOOT windows opening off-screen if the screen area had been changed since last run.
+- LOOT windows opening off-screen if the screen area had been changed since last
+  run.
 - Read-only ``.git`` folders preventing repository deletion.
 - Unnecessary plugins in cyclic dependency error messages.
 - Bash Tag suggestions displaying incorrectly.
 - The current game can no longer be deleted from the settings window.
-- Plugin metadata being lost when the settings window was exited with the "OK" button, leading to possible condition evaluation issues.
-- A blank report bug when running on systems which don't have Internet Explorer 11 installed.
-- Reports appearing empty of all content when no global messages are to be displayed.
+- Plugin metadata being lost when the settings window was exited with the "OK"
+  button, leading to possible condition evaluation issues.
+- A blank report bug when running on systems which don't have Internet Explorer
+  11 installed.
+- Reports appearing empty of all content when no global messages are to be
+  displayed.
 
 Security
 --------
 
-- Updated libgit2 to 0.21.3, which includes a fix for a critical security vulnerability.
+- Updated libgit2 to 0.21.3, which includes a fix for a critical security
+  vulnerability.
 
 
 0.6.0 - 2014-07-05
@@ -2705,8 +3100,10 @@ Added
 
 - Display of masterlist revision date in reports.
 - Report filter for inactive plugin messages.
-- The number of dirty plugins, active plugins and plugins in total to the report summary.
-- A find dialog to the report viewer, initiated using the ``Ctrl-F`` keyboard shortcut.
+- The number of dirty plugins, active plugins and plugins in total to the report
+  summary.
+- A find dialog to the report viewer, initiated using the ``Ctrl-F`` keyboard
+  shortcut.
 - LOOT's windows now remember their last position and size.
 - Command line parameter for selecting the game LOOT should run for.
 - Finnish translation.
@@ -2714,41 +3111,67 @@ Added
 Changed
 -------
 
-- Unified and improved the metadata editors launched during and outside of sorting.
+- Unified and improved the metadata editors launched during and outside of
+  sorting.
 
   - The metadata editor now resizes more appropriately.
-  - The mid-sorting instance hides the requirement, incompatibility, Bash Tags, dirty info and message lists.
-  - Both instances now have a conflict filter, priority display in their plugin list and drag 'n' drop from the plugin list into whatever metadata lists are visible.
-  - The mid-sorting instance also hides the load after entry edit button, and the button to add new entries (so drag 'n' drop is the only available method of adding entries).
-  - The metadata editor now displays plugins with user edits using a tick beside their name, rather than bolding their name text.
-  - Plugins that have been edited in the current instance have their list entry text bolded.
-  - Checkboxes have been added to set whether or not a priority value is "global". The UI also now displays the priority value used in comparisons (ie. with the millions and higher digits omitted).
-  - A right-click menu command for clearing all user-added metadata for all plugins has been added to the metadata editor.
+  - The mid-sorting instance hides the requirement, incompatibility, Bash Tags,
+    dirty info and message lists.
+  - Both instances now have a conflict filter, priority display in their plugin
+    list and drag 'n' drop from the plugin list into whatever metadata lists are
+    visible.
+  - The mid-sorting instance also hides the load after entry edit button, and
+    the button to add new entries (so drag 'n' drop is the only available method
+    of adding entries).
+  - The metadata editor now displays plugins with user edits using a tick beside
+    their name, rather than bolding their name text.
+  - Plugins that have been edited in the current instance have their list entry
+    text bolded.
+  - Checkboxes have been added to set whether or not a priority value is
+    "global". The UI also now displays the priority value used in comparisons
+    (ie. with the millions and higher digits omitted).
+  - A right-click menu command for clearing all user-added metadata for all
+    plugins has been added to the metadata editor.
 
-- Missing master/requirement and incompatibility errors are downgraded to warnings if the plugin in question is inactive.
+- Missing master/requirement and incompatibility errors are downgraded to
+  warnings if the plugin in question is inactive.
 - Masterlist update errors have been made more user-friendly.
-- If an error is encountered during masterlist update, LOOT will now silently delete the repository folder and attempt the update again. If it fails again, it will then report an error.
-- Masterlist update now handles repository interaction a lot more like Git itself does, so should be less error-prone.
+- If an error is encountered during masterlist update, LOOT will now silently
+  delete the repository folder and attempt the update again. If it fails again,
+  it will then report an error.
+- Masterlist update now handles repository interaction a lot more like Git
+  itself does, so should be less error-prone.
 - Cyclic dependency error messages now detail the full cycle.
-- LOOT's report now uses a static HTML file and generates a javascript file that is dynamically loaded to contain the report data. This removes the PugiXML build dependency.
-- Debug log message priorities adjusted so that medium verbosity includes more useful data.
-- Updated dependencies: libgit2 (v0.21.0), wxWidgets (v3.0.1), libloadorder (latest), libespm (latest).
+- LOOT's report now uses a static HTML file and generates a javascript file that
+  is dynamically loaded to contain the report data. This removes the PugiXML
+  build dependency.
+- Debug log message priorities adjusted so that medium verbosity includes more
+  useful data.
+- Updated dependencies: libgit2 (v0.21.0), wxWidgets (v3.0.1), libloadorder
+  (latest), libespm (latest).
 
 Removed
 --------
 
 - Support for Windows XP.
-- Support for loading BOSS masterlists using the API. This was a leftover from when LOOT was BOSSv3 and backwards compatibility was an issue.
-- The ability to open reports in an external browser. This was necessitated by the changes to report generation.
+- Support for loading BOSS masterlists using the API. This was a leftover from
+  when LOOT was BOSSv3 and backwards compatibility was an issue.
+- The ability to open reports in an external browser. This was necessitated by
+  the changes to report generation.
 - The MSVC 2013 redistributable requirement.
-- The "None Specified" language option is no longer available: English is the new default.
+- The "None Specified" language option is no longer available: English is the
+  new default.
 
 Fixed
 -----
 
-- The uninstaller not removing the Git repositories used to update the masterlists.
+- The uninstaller not removing the Git repositories used to update the
+  masterlists.
 - Miscellaneous crashes due to uncaught exceptions.
-- Plugin priorities are now temporarily "inherited" during sorting so that a plugin with a low priority that is made via metadata to load after a plugin with a high priority doesn't cause other plugins with lower priorities to be positioned incorrectly.
+- Plugin priorities are now temporarily "inherited" during sorting so that a
+  plugin with a low priority that is made via metadata to load after a plugin
+  with a high priority doesn't cause other plugins with lower priorities to be
+  positioned incorrectly.
 - The default language is now correctly set to English.
 - Defaults for the online masterlist repository used for Nehrim.
 - Endless sorting loop that occurred if some user metadata was disabled.

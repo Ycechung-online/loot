@@ -1,10 +1,12 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2021 Daniel Coelho
+    Copyright (C) 2021 IllusiveMan196
+    Copyright (C) 2021 sibir-ine
+    Copyright (C) 2024 Ilker Binzet
 
     This file is part of LOOT.
 
@@ -95,6 +97,7 @@ public:
   std::string getPreludeSource() const;
   std::optional<WindowPosition> getMainWindowPosition() const;
   std::optional<WindowPosition> getGroupsEditorWindowPosition() const;
+  std::optional<WindowPosition> getCompareLoadOrdersWindowPosition() const;
   const std::vector<GameSettings>& getGameSettings() const;
   const Filters& getFilters() const;
   const std::vector<Language>& getLanguages() const;
@@ -113,6 +116,7 @@ public:
   void storeLastGame(const std::string& lastGame);
   void storeMainWindowPosition(const WindowPosition& position);
   void storeGroupsEditorWindowPosition(const WindowPosition& position);
+  void storeCompareLoadOrdersWindowPosition(const WindowPosition& position);
   void storeGameSettings(const std::vector<GameSettings>& gameSettings);
   void storeFilters(const Filters& filters);
   void updateLastVersion();
@@ -132,6 +136,7 @@ private:
   std::string theme_{"default"};
   std::optional<WindowPosition> mainWindowPosition_;
   std::optional<WindowPosition> groupsEditorWindowPosition_;
+  std::optional<WindowPosition> compareLoadOrdersWindowPosition_;
   std::vector<GameSettings> gameSettings_;
   Filters filters_;
   std::vector<Language> languages_{

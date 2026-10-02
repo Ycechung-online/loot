@@ -1,10 +1,9 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2024 Dirk Stolle
 
     This file is part of LOOT.
 
@@ -36,8 +35,7 @@
 namespace loot {
 constexpr double LAYER_SPACING = 30.0;
 
-std::map<Node *, QPointF> calculateGraphLayout(
-    const std::vector<Node *> &nodes) {
+std::map<Node*, QPointF> calculateGraphLayout(const std::vector<Node*>& nodes) {
   ogdf::Graph graph;
   ogdf::GraphAttributes graphAttributes(
       graph,
@@ -50,8 +48,8 @@ std::map<Node *, QPointF> calculateGraphLayout(
   graphAttributes.directed() = true;
 
   // Add all nodes to the graph.
-  std::map<Node *, ogdf::node> graphNodes;
-  std::map<ogdf::node, Node *> sceneNodes;
+  std::map<Node*, ogdf::node> graphNodes;
+  std::map<ogdf::node, Node*> sceneNodes;
   for (const auto node : nodes) {
     if (node == nullptr) {
       throw std::invalid_argument("nodes vector contains a null pointer");
@@ -101,7 +99,7 @@ std::map<Node *, QPointF> calculateGraphLayout(
   SL.setRanking(new ogdf::OptimalRanking);
   SL.setCrossMin(new ogdf::MedianHeuristic);
 
-  ogdf::OptimalHierarchyLayout *ohl = new ogdf::OptimalHierarchyLayout;
+  ogdf::OptimalHierarchyLayout* ohl = new ogdf::OptimalHierarchyLayout;
   ohl->layerDistance(LAYER_SPACING);
   ohl->nodeDistance(NODE_SPACING);
   SL.setLayout(ohl);
@@ -111,7 +109,7 @@ std::map<Node *, QPointF> calculateGraphLayout(
   // Now rotate the layout to get a layers arranged horizontally.
   graphAttributes.rotateLeft90();
 
-  std::map<Node *, QPointF> nodePositions;
+  std::map<Node*, QPointF> nodePositions;
 
   for (const auto node : graph.nodes) {
     QPointF position(graphAttributes.x(node), graphAttributes.y(node));

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -52,15 +50,15 @@ QIcon IconFactory::getIsActiveIcon() {
 
 QIcon IconFactory::getMasterFileIcon() { return getIcon(":/icons/crown.svg"); }
 
-QIcon IconFactory::getBlueprintMasterIcon() { return getIcon(":/icons/crown-blueprint.svg"); }
+QIcon IconFactory::getBlueprintMasterIcon() {
+  return getIcon(":/icons/crown-blueprint.svg");
+}
 
 QIcon IconFactory::getLightPluginIcon() {
   return getIcon(":/icons/feather.svg");
 }
 
-QIcon IconFactory::getSmallPluginIcon() {
-  return getIcon(":/icons/small.svg");
-}
+QIcon IconFactory::getSmallPluginIcon() { return getIcon(":/icons/small.svg"); }
 
 QIcon IconFactory::getMediumPluginIcon() {
   return getIcon(":/icons/medium.svg");
@@ -96,8 +94,24 @@ QIcon IconFactory::getDiscardSortIcon() {
   return getIcon(":/icons/material-icons/close_black_48dp.svg");
 }
 
+QIcon IconFactory::getCompareLoadOrdersIcon() {
+  return getIcon(":/icons/material-icons/text_compare_black_48dp.svg");
+}
+
 QIcon IconFactory::getUpdateMasterlistIcon() {
   return getIcon(":/icons/material-icons/file_download_black_48dp.svg");
+}
+
+QIcon IconFactory::getRegexIcon() {
+  return getIcon(":/icons/material-icons/regular_expression_black_48dp.svg");
+}
+
+QIcon IconFactory::getNextSearchResultIcon() {
+  return getIcon(":/icons/material-icons/arrow_downward_black_48dp.svg");
+}
+
+QIcon IconFactory::getPreviousSearchResultIcon() {
+  return getIcon(":/icons/material-icons/arrow_upward_black_48dp.svg");
 }
 
 QIcon IconFactory::getSettingsIcon() {
@@ -173,6 +187,14 @@ QIcon IconFactory::getJoinDiscordServerIcon() {
 
 QIcon IconFactory::getAboutIcon() {
   return getIcon(":/icons/material-icons/help_black_48dp.svg");
+}
+
+QIcon IconFactory::getLineAddedIcon() {
+  return getIcon(":/icons/material-icons/add_black_48dp.svg");
+}
+
+QIcon IconFactory::getLineRemovedIcon() {
+  return getIcon(":/icons/material-icons/remove_black_48dp.svg");
 }
 
 QPixmap IconFactory::getPixmap(const QIcon& icon,

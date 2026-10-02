@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -41,26 +39,26 @@ namespace loot {
 class SettingsDialog : public QDialog {
   Q_OBJECT
 public:
-  SettingsDialog(QWidget *parent, const std::filesystem::path &lootDataPath);
+  SettingsDialog(QWidget* parent, const std::filesystem::path& lootDataPath);
 
-  void initialiseInputs(const LootSettings &settings,
-                        const std::vector<std::string> &themes,
-                        const std::optional<std::string> &currentGameFolder);
+  void initialiseInputs(const LootSettings& settings,
+                        const std::vector<std::string>& themes,
+                        const std::optional<std::string>& currentGameFolder);
 
-  void recordInputValues(LootState &state);
+  void recordInputValues(LootState& state);
 
 private:
-  QListWidget *listWidget{new QListWidget(this)};
-  QPushButton *addGameButton{new QPushButton(this)};
-  GeneralTab *generalTab{new GeneralTab(this)};
-  QStackedWidget *stackedWidget{new QStackedWidget(this)};
+  QListWidget* listWidget{new QListWidget(this)};
+  QPushButton* addGameButton{new QPushButton(this)};
+  GeneralTab* generalTab{new GeneralTab(this)};
+  QStackedWidget* stackedWidget{new QStackedWidget(this)};
 
   std::filesystem::path lootDataPath;
 
   void setupUi();
   void translateUi();
 
-  void addGameTab(const GameSettings &settings, bool isCurrentGame);
+  void addGameTab(const GameSettings& settings, bool isCurrentGame);
   void removeTab(int index);
 
 private slots:
@@ -69,7 +67,7 @@ private slots:
   void on_addGameButton_clicked();
 
   void onGameSettingsDeleted();
-  void onGameNameChanged(const QString &name);
+  void onGameNameChanged(const QString& name);
 };
 }
 

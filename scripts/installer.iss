@@ -3,12 +3,13 @@
 ; be displayed correctly.
 
 #define MyAppName "LOOT"
-#define MyAppVersion "0.28.0"
-#define MyAppPublisher "LOOT Team"
+#define MyAppVersion "0.29.2"
+#define MyAppPublisher "The LOOT Team"
+#define MyAppCopyrightHolders "The LOOT Contributors"
 #define MyAppURL "https://loot.github.io"
 #define MyAppExeName "LOOT.exe"
 
-#define MasterlistBranch "v0.26"
+#define MasterlistBranch "v0.29"
 
 #if FileExists(AddBackslash(SourcePath) + '..\build\inno\ChineseSimplified.isl')
 #define SimplifiedChineseExists
@@ -32,7 +33,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-AppCopyright=Copyright (C) 2009 {#MyAppPublisher}
+AppCopyright=Copyright (C) 2013–2026 {#MyAppCopyrightHolders}
 DefaultDirName={autopf}\{#MyAppName}
 SourceDir=..\
 OutputBaseFilename=LOOT Installer
@@ -162,6 +163,8 @@ Source: "resources\l10n\ru\LC_MESSAGES\loot.mo"; \
 DestDir: "{app}\resources\l10n\ru\LC_MESSAGES"; Flags: ignoreversion
 Source: "resources\l10n\sv\LC_MESSAGES\loot.mo"; \
 DestDir: "{app}\resources\l10n\sv\LC_MESSAGES"; Flags: ignoreversion
+Source: "resources\l10n\ta\LC_MESSAGES\loot.mo"; \
+DestDir: "{app}\resources\l10n\ta\LC_MESSAGES"; Flags: ignoreversion
 Source: "resources\l10n\tr_TR\LC_MESSAGES\loot.mo"; \
 DestDir: "{app}\resources\l10n\tr_TR\LC_MESSAGES"; Flags: ignoreversion
 Source: "resources\l10n\uk_UA\LC_MESSAGES\loot.mo"; \
@@ -299,6 +302,10 @@ Type: dirifempty; Name: "{app}\resources\l10n\ru\LC_MESSAGES";
 Type: dirifempty; Name: "{app}\resources\l10n\ru";
 Type: dirifempty; Name: "{app}\resources\l10n\sv\LC_MESSAGES";
 Type: dirifempty; Name: "{app}\resources\l10n\sv";
+Type: dirifempty; Name: "{app}\resources\l10n\ta\LC_MESSAGES";
+Type: dirifempty; Name: "{app}\resources\l10n\ta";
+Type: dirifempty; Name: "{app}\resources\l10n\tr_TR\LC_MESSAGES";
+Type: dirifempty; Name: "{app}\resources\l10n\tr_TR";
 Type: dirifempty; Name: "{app}\resources\l10n\uk_UA\LC_MESSAGES";
 Type: dirifempty; Name: "{app}\resources\l10n\uk_UA";
 Type: dirifempty; Name: "{app}\resources\l10n\zh_CN\LC_MESSAGES";

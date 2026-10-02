@@ -1,26 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_COMMON_GAME_TEST_FIXTURE
 #define LOOT_TESTS_COMMON_GAME_TEST_FIXTURE
@@ -40,82 +39,153 @@ along with LOOT.  If not, see
 
 namespace loot {
 namespace test {
-class CommonGameTestFixture : public ::testing::Test {
-protected:
-  explicit CommonGameTestFixture(const GameId gameId) :
-      gameId_(gameId),
-      rootTestPath(getTempPath()),
-      missingPath(rootTestPath / "missing"),
-      gamePath(rootTestPath / "games" / "game"),
-      dataPath(gamePath / getPluginsFolder()),
-      localPath(rootTestPath / "local" / "game"),
-      lootDataPath(rootTestPath / "local" / "LOOT"),
-      masterFile(getMasterFile()) {
-    assertInitialState();
+inline constexpr const char* MISSING_ESP{"Blank.missing.esp"};
+inline constexpr const char* BLANK_ESM{"Blank.esm"};
+inline constexpr const char* BLANK_DIFFERENT_ESM{"Blank - Different.esm"};
+inline constexpr const char* BLANK_MASTER_DEPENDENT_ESM{
+    "Blank - Master Dependent.esm"};
+inline constexpr const char* BLANK_DIFFERENT_MASTER_DEPENDENT_ESM{
+    "Blank - Different Master Dependent.esm"};
+inline constexpr const char* BLANK_ESP{"Blank.esp"};
+inline constexpr const char* BLANK_DIFFERENT_ESP{"Blank - Different.esp"};
+inline constexpr const char* BLANK_MASTER_DEPENDENT_ESP{
+    "Blank - Master Dependent.esp"};
+inline constexpr const char* BLANK_DIFFERENT_MASTER_DEPENDENT_ESP{
+    "Blank - Different Master Dependent.esp"};
+inline constexpr const char* BLANK_PLUGIN_DEPENDENT_ESP{
+    "Blank - Plugin Dependent.esp"};
+inline constexpr const char* BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP{
+    "Blank - Different Plugin Dependent.esp"};
+inline constexpr const char* NON_ASCII_ESP{u8"non\u00C1scii.esp"};
+
+std::string getPluginsFolder(GameId gameId) {
+  if (gameId == GameId::tes3) {
+    return "Data Files";
+  } else if (gameId == GameId::openmw) {
+    return "resources/vfs";
+  } else if (gameId == GameId::oblivionRemastered) {
+    return "OblivionRemastered/Content/Dev/ObvData/Data";
+  } else {
+    return "Data";
+  }
+}
+
+std::string getMasterFile(GameId gameId) {
+  switch (gameId) {
+    case GameId::tes3:
+      return "Morrowind.esm";
+    case GameId::tes4:
+    case GameId::oblivionRemastered:
+      return "Oblivion.esm";
+    case GameId::nehrim:
+      return "Nehrim.esm";
+    case GameId::tes5:
+    case GameId::tes5se:
+    case GameId::tes5vr:
+    case GameId::enderal:
+    case GameId::enderalse:
+      return "Skyrim.esm";
+    case GameId::fo3:
+      return "Fallout3.esm";
+    case GameId::fonv:
+      return "FalloutNV.esm";
+    case GameId::fo4:
+    case GameId::fo4vr:
+      return "Fallout4.esm";
+    case GameId::starfield:
+      return "Starfield.esm";
+    case GameId::openmw:
+      return "builtin.omwscripts";
+    default:
+      throw std::logic_error("Unrecognised game ID");
+  }
+}
+
+bool isExecutableNeeded(GameId gameId) {
+  return gameId == GameId::tes5 || gameId == GameId::enderal ||
+         gameId == GameId::tes5se || gameId == GameId::enderalse ||
+         gameId == GameId::tes5vr || gameId == GameId::fo4 ||
+         gameId == GameId::fo4vr || gameId == GameId::tes3 ||
+         gameId == GameId::openmw;
+}
+
+std::string getGameExecutable(GameId gameId) {
+  switch (gameId) {
+    case GameId::tes3:
+      return "Morrowind.exe";
+    case GameId::tes5:
+    case GameId::enderal:
+      return "TESV.exe";
+    case GameId::tes5se:
+    case GameId::enderalse:
+      return "SkyrimSE.exe";
+    case GameId::tes5vr:
+      return "SkyrimVR.exe";
+    case GameId::fo4:
+      return "Fallout4.exe";
+    case GameId::fo4vr:
+      return "Fallout4VR.exe";
+    case GameId::openmw:
+#ifdef _WIN32
+      return "openmw.exe";
+#else
+      return "openmw";
+#endif
+    default:
+      throw std::logic_error("Unexpected game type");
+  }
+}
+
+std::vector<std::string> readFileLines(const std::filesystem::path& file) {
+  std::ifstream in(file);
+
+  std::vector<std::string> lines;
+  while (in) {
+    std::string line;
+    std::getline(in, line);
+
+    if (!line.empty()) {
+      lines.push_back(line);
+    }
   }
 
-  void assertInitialState() {
-    using std::filesystem::create_directories;
-    using std::filesystem::exists;
+  return lines;
+}
 
-    create_directories(dataPath);
-    ASSERT_TRUE(exists(dataPath));
+bool isLoadOrderTimestampBased(GameId gameId) {
+  return gameId == GameId::tes3 || gameId == GameId::tes4 ||
+         gameId == GameId::nehrim || gameId == GameId::fo3 ||
+         gameId == GameId::fonv;
+}
 
-    create_directories(localPath);
-    ASSERT_TRUE(exists(localPath));
+class FilesystemTest : public ::testing::Test {
+protected:
+  FilesystemTest() : rootPath_(getTempPath()) {
+    std::filesystem::create_directories(rootPath_);
+  }
 
-    create_directories(lootDataPath);
-    ASSERT_TRUE(exists(lootDataPath));
+  void TearDown() override { std::filesystem::remove_all(rootPath_); }
 
-    if (isExecutableNeeded()) {
-      touch(gamePath / getGameExecutable());
-      ASSERT_TRUE(exists(gamePath / getGameExecutable()));
+  std::filesystem::path rootPath_;
+};
+
+class BaseGameDetectionTest : public FilesystemTest {
+protected:
+  explicit BaseGameDetectionTest(GameId gameId) :
+      gameId_(gameId),
+      gamePath(rootPath_ / "game"),
+      dataPath(gamePath / getPluginsFolder(gameId_)) {
+    touch(dataPath / getMasterFile(gameId_));
+    if (isExecutableNeeded(gameId_)) {
+      touch(gamePath / getGameExecutable(gameId_));
     }
-
-    auto sourcePluginsPath = getSourcePluginsPath();
-
-    copyPlugin(sourcePluginsPath, BLANK_ESM);
-    copyPlugin(sourcePluginsPath, BLANK_DIFFERENT_ESM);
-    copyPlugin(sourcePluginsPath, BLANK_MASTER_DEPENDENT_ESM);
-    copyPlugin(sourcePluginsPath, BLANK_DIFFERENT_MASTER_DEPENDENT_ESM);
-    copyPlugin(sourcePluginsPath, BLANK_ESP);
-    copyPlugin(sourcePluginsPath, BLANK_DIFFERENT_ESP);
-    copyPlugin(sourcePluginsPath, BLANK_MASTER_DEPENDENT_ESP);
-    copyPlugin(sourcePluginsPath, BLANK_DIFFERENT_MASTER_DEPENDENT_ESP);
-    copyPlugin(sourcePluginsPath, BLANK_PLUGIN_DEPENDENT_ESP);
-    copyPlugin(sourcePluginsPath, BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP);
-
-    // Make sure the game master plugin exists.
-    ASSERT_NO_THROW(std::filesystem::copy_file(dataPath / BLANK_ESM,
-                                               dataPath / masterFile));
-    ASSERT_TRUE(exists(dataPath / masterFile));
-
-    // Create the non-ASCII plugin.
-    ASSERT_NO_THROW(std::filesystem::copy_file(
-        dataPath / BLANK_ESP,
-        dataPath / std::filesystem::u8path(NON_ASCII_ESP)));
-    ASSERT_TRUE(exists(dataPath / std::filesystem::u8path(NON_ASCII_ESP)));
-
-    // Set initial load order and active plugins.
-    setLoadOrder(getInitialLoadOrder());
-
-    // Ghost a plugin.
-    ASSERT_NO_THROW(std::filesystem::rename(
-        dataPath / BLANK_MASTER_DEPENDENT_ESM,
-        dataPath / (std::string(BLANK_MASTER_DEPENDENT_ESM) + ".ghost")));
-    ASSERT_FALSE(exists(dataPath / BLANK_MASTER_DEPENDENT_ESM));
-    ASSERT_TRUE(exists(dataPath /
-                       (std::string(BLANK_MASTER_DEPENDENT_ESM) + ".ghost")));
-
-    ASSERT_FALSE(exists(missingPath));
-    ASSERT_FALSE(exists(dataPath / MISSING_ESP));
   }
 
   void TearDown() override {
     // Grant write permissions to everything in rootTestPath
     // in case the test made anything read only.
     for (const auto& entry :
-         std::filesystem::recursive_directory_iterator(rootTestPath)) {
+         std::filesystem::recursive_directory_iterator(rootPath_)) {
       if (!entry.is_symlink()) {
         std::filesystem::permissions(entry,
                                      std::filesystem::perms::owner_write,
@@ -123,33 +193,48 @@ protected:
       }
     }
 
-    std::filesystem::remove_all(rootTestPath);
+    FilesystemTest::TearDown();
   }
 
-  void copyPlugin(const std::filesystem::path& sourceParentPath,
-                  const std::string& filename) {
-    std::filesystem::copy_file(sourceParentPath / filename,
-                               dataPath / filename);
-    ASSERT_TRUE(std::filesystem::exists(dataPath / filename));
+  GameId gameId_;
+  std::filesystem::path gamePath;
+  std::filesystem::path dataPath;
+};
+
+class CommonGameTestFixture : public FilesystemTest {
+protected:
+  explicit CommonGameTestFixture(const GameId gameId) :
+      gameId_(gameId),
+      gamePath(rootPath_ / "games" / "game"),
+      dataPath(gamePath / getPluginsFolder(gameId)),
+      localPath(rootPath_ / "local" / "game"),
+      lootDataPath(rootPath_ / "local" / "LOOT") {
+    assertInitialState();
   }
 
-  std::vector<std::string> readFileLines(const std::filesystem::path& file) {
-    std::ifstream in(file);
+  void assertInitialState() {
+    using std::filesystem::create_directories;
 
-    std::vector<std::string> lines;
-    while (in) {
-      std::string line;
-      std::getline(in, line);
-
-      if (!line.empty()) {
-        lines.push_back(line);
-      }
-    }
-
-    return lines;
+    create_directories(dataPath);
+    create_directories(localPath);
+    create_directories(lootDataPath);
   }
 
-  std::vector<std::string> getLoadOrder() {
+  void copyPlugin(std::string_view filename) { copyPlugin(filename, filename); }
+
+  void copyPlugin(std::string_view sourceFilename,
+                  std::string_view destinationFilename) {
+    const auto destinationPath =
+        dataPath / std::filesystem::u8path(destinationFilename);
+
+    std::filesystem::copy_file(
+        getSourcePluginsPath() / std::filesystem::u8path(sourceFilename),
+        destinationPath);
+
+    ASSERT_TRUE(std::filesystem::exists(destinationPath));
+  }
+
+  std::vector<std::string> getLoadOrder() const {
     std::vector<std::string> actual;
     if (isLoadOrderTimestampBased(gameId_)) {
       std::map<std::filesystem::file_time_type, std::string> loadOrder;
@@ -191,102 +276,18 @@ protected:
     return actual;
   }
 
-  std::vector<std::pair<std::string, bool>> getInitialLoadOrder() const {
-    return std::vector<std::pair<std::string, bool>>({
-        {masterFile, true},
-        {BLANK_ESM, true},
-        {BLANK_DIFFERENT_ESM, false},
-        {BLANK_MASTER_DEPENDENT_ESM, false},
-        {BLANK_DIFFERENT_MASTER_DEPENDENT_ESM, false},
-        {BLANK_ESP, false},
-        {BLANK_DIFFERENT_ESP, false},
-        {BLANK_MASTER_DEPENDENT_ESP, false},
-        {BLANK_DIFFERENT_MASTER_DEPENDENT_ESP, true},
-        {BLANK_PLUGIN_DEPENDENT_ESP, false},
-        {BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP, false},
-        {NON_ASCII_ESP, true},
-    });
-  }
-
   std::filesystem::path getSourcePluginsPath() const {
     return loot::test::getSourcePluginsPath(gameId_);
   }
 
 private:
   GameId gameId_;
-  std::filesystem::path rootTestPath;
 
 protected:
-  static constexpr const char* MISSING_ESP{"Blank.missing.esp"};
-  static constexpr const char* BLANK_ESM{"Blank.esm"};
-  static constexpr const char* BLANK_DIFFERENT_ESM{"Blank - Different.esm"};
-  static constexpr const char* BLANK_MASTER_DEPENDENT_ESM{
-      "Blank - Master Dependent.esm"};
-  static constexpr const char* BLANK_DIFFERENT_MASTER_DEPENDENT_ESM{
-      "Blank - Different Master Dependent.esm"};
-  static constexpr const char* BLANK_ESP{"Blank.esp"};
-  static constexpr const char* BLANK_DIFFERENT_ESP{"Blank - Different.esp"};
-  static constexpr const char* BLANK_MASTER_DEPENDENT_ESP{
-      "Blank - Master Dependent.esp"};
-  static constexpr const char* BLANK_DIFFERENT_MASTER_DEPENDENT_ESP{
-      "Blank - Different Master Dependent.esp"};
-  static constexpr const char* BLANK_PLUGIN_DEPENDENT_ESP{
-      "Blank - Plugin Dependent.esp"};
-  static constexpr const char* BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP{
-      "Blank - Different Plugin Dependent.esp"};
-  static constexpr const char* NON_ASCII_ESP{u8"non\u00C1scii.esp"};
-
-  std::filesystem::path missingPath;
   std::filesystem::path gamePath;
   std::filesystem::path dataPath;
   std::filesystem::path localPath;
   std::filesystem::path lootDataPath;
-
-  std::string masterFile;
-
-private:
-  std::string getMasterFile() const {
-    switch (gameId_) {
-      case GameId::tes3:
-        return "Morrowind.esm";
-      case GameId::tes4:
-      case GameId::oblivionRemastered:
-        return "Oblivion.esm";
-      case GameId::nehrim:
-        return "Nehrim.esm";
-      case GameId::tes5:
-      case GameId::tes5se:
-      case GameId::tes5vr:
-      case GameId::enderal:
-      case GameId::enderalse:
-        return "Skyrim.esm";
-      case GameId::fo3:
-        return "Fallout3.esm";
-      case GameId::fonv:
-        return "FalloutNV.esm";
-      case GameId::fo4:
-      case GameId::fo4vr:
-        return "Fallout4.esm";
-      case GameId::starfield:
-        return "Starfield.esm";
-      case GameId::openmw:
-        return "builtin.omwscripts";
-      default:
-        throw std::logic_error("Unrecognised game ID");
-    }
-  }
-
-  std::string getPluginsFolder() const {
-    if (gameId_ == GameId::tes3) {
-      return "Data Files";
-    } else if (gameId_ == GameId::openmw) {
-      return "resources/vfs";
-    } else if (gameId_ == GameId::oblivionRemastered) {
-      return "OblivionRemastered/Content/Dev/ObvData/Data";
-    } else {
-      return "Data";
-    }
-  }
 
   void setLoadOrder(
       const std::vector<std::pair<std::string, bool>>& loadOrder) const {
@@ -342,47 +343,6 @@ private:
           gameId_ == GameId::oblivionRemastered ? dataPath : localPath;
       std::ofstream out(parentPath / "loadorder.txt");
       for (const auto& plugin : loadOrder) out << plugin.first << std::endl;
-    }
-  }
-
-  static bool isLoadOrderTimestampBased(GameId gameId) {
-    return gameId == GameId::tes3 || gameId == GameId::tes4 ||
-           gameId == GameId::nehrim || gameId == GameId::fo3 ||
-           gameId == GameId::fonv;
-  }
-
-  bool isExecutableNeeded() {
-    return gameId_ == GameId::tes5 || gameId_ == GameId::enderal ||
-           gameId_ == GameId::tes5se || gameId_ == GameId::enderalse ||
-           gameId_ == GameId::tes5vr || gameId_ == GameId::fo4 ||
-           gameId_ == GameId::fo4vr || gameId_ == GameId::tes3 ||
-           gameId_ == GameId::openmw;
-  }
-
-  std::string getGameExecutable() {
-    switch (gameId_) {
-      case GameId::tes3:
-        return "Morrowind.exe";
-      case GameId::tes5:
-      case GameId::enderal:
-        return "TESV.exe";
-      case GameId::tes5se:
-      case GameId::enderalse:
-        return "SkyrimSE.exe";
-      case GameId::tes5vr:
-        return "SkyrimVR.exe";
-      case GameId::fo4:
-        return "Fallout4.exe";
-      case GameId::fo4vr:
-        return "Fallout4VR.exe";
-      case GameId::openmw:
-#ifdef _WIN32
-        return "openmw.exe";
-#else
-        return "openmw";
-#endif
-      default:
-        throw std::logic_error("Unexpected game type");
     }
   }
 };

@@ -1,10 +1,9 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2024 Dirk Stolle
 
     This file is part of LOOT.
 
@@ -136,19 +135,7 @@ GeneralInfoCard* setGeneralInfoCardContent(GeneralInfoCard* card,
   auto counters = index.data(CountersRole).value<GeneralInformationCounters>();
   auto hasHiddenMessages = index.data(HasHiddenMessagesRole).value<bool>();
 
-  card->setShowSeparateLightPluginCount(generalInfo.gameSupportsLightPlugins);
-  card->setShowSeparateMediumPluginCount(generalInfo.gameSupportsMediumPlugins);
-  card->setMasterlistInfo(generalInfo.masterlistRevision);
-  card->setPreludeInfo(generalInfo.preludeRevision);
-  card->setMessageCounts(
-      counters.warnings, counters.errors, counters.totalMessages);
-  card->setPluginCounts(counters.activeLight,
-                        counters.activeMedium,
-                        counters.activeFull,
-                        counters.dirty,
-                        counters.totalPlugins);
-  card->setGeneralMessages(generalInfo.generalMessages);
-  card->setHasHiddenMessages(hasHiddenMessages);
+  card->setContent(generalInfo, counters, hasHiddenMessages);
 
   return card;
 }
@@ -223,6 +210,18 @@ namespace loot {
 CardSizingCache::CardSizingCache(QWidget* cardParentWidget) :
     cardParentWidget(cardParentWidget) {}
 
+void CardSizingCache::clear() {
+  keyCache.clear();
+
+  for (auto& [key, value] : cardCache) {
+    delete value.first;
+    value.first = nullptr;
+    value.second = 0;
+  }
+
+  cardCache.clear();
+}
+
 void CardSizingCache::update(const QAbstractItemModel* model) {
   update(model, 0, model->rowCount());
 }
@@ -271,6 +270,8 @@ QWidget* CardSizingCache::update(const QModelIndex& index) {
 
         // If the old key's count is now 0, remove it from the card cache.
         if (oldCardCacheIt->second.second == 0) {
+          delete oldCardCacheIt->second.first;
+          oldCardCacheIt->second.first = nullptr;
           cardCache.erase(oldCardCacheIt);
         }
       }
@@ -339,19 +340,14 @@ CardDelegate::CardDelegate(QListView* parent,
   prepareWidget(pluginCard);
 }
 
-void CardDelegate::setIcons() { pluginCard->setIcons(); }
-
-void CardDelegate::refreshMessages() {
-  generalInfoCard->refreshMessages();
-  pluginCard->refreshMessages();
+void CardDelegate::setIcons() {
+  generalInfoCard->setIcons();
+  pluginCard->setIcons();
 }
 
-void CardDelegate::refreshStyling() {
-  generalInfoCard->setVisible(true);
-  generalInfoCard->setVisible(false);
-
-  pluginCard->setVisible(true);
-  pluginCard->setVisible(false);
+void CardDelegate::invalidateCache() {
+  cardSizingCache->clear();
+  sizeHintCache.clear();
 }
 
 void CardDelegate::paint(QPainter* painter,
@@ -437,7 +433,7 @@ QSize CardDelegate::sizeHint(const QStyleOptionViewItem& option,
 }
 
 QWidget* CardDelegate::createEditor(QWidget* parent,
-                                    const QStyleOptionViewItem&,
+                                    const QStyleOptionViewItem& option,
                                     const QModelIndex& index) const {
   if (!index.isValid()) {
     return nullptr;

@@ -1,10 +1,9 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2022 Matthew Branigan
 
     This file is part of LOOT.
 
@@ -26,6 +25,7 @@
 #include "gui/state/game/game.h"
 
 #include <algorithm>
+#include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
 #include <execution>
 #include <fstream>
@@ -68,6 +68,7 @@ using loot::Filename;
 using loot::GameId;
 using loot::GameType;
 using loot::getLogger;
+using loot::Group;
 using loot::MessageSource;
 using loot::MessageType;
 using loot::SourcedMessage;
@@ -202,7 +203,7 @@ SourcedMessage createSortingCyclicInteractionErrorMessage(
 
   return SourcedMessage{
       MessageType::error,
-      MessageSource::caughtException,
+      MessageSource::cyclicInteraction,
       fmt::format(
           translate(
               "Cyclic interaction detected between \"{0}\" and \"{1}\": {2}"),
@@ -220,7 +221,7 @@ SourcedMessage createSortingUndefinedGroupErrorMessage(
 
   return createPlainTextSourcedMessage(
       MessageType::error,
-      MessageSource::caughtException,
+      MessageSource::missingGroup,
       fmt::format(translate("The group \"{0}\" does not exist."),
                   e.GetGroupName()));
 }
@@ -385,6 +386,265 @@ std::string getLoadOrderAsTextTable(
 
   return stream.str();
 }
+
+std::unordered_set<std::string> getRemovedGroups(
+    const std::vector<Group>& oldGroups,
+    const std::vector<Group>& newGroups) {
+  std::unordered_set<std::string> newGroupNames;
+  for (const auto& group : newGroups) {
+    newGroupNames.insert(group.GetName());
+  }
+
+  std::unordered_set<std::string> removedGroupNames;
+  for (const auto& group : oldGroups) {
+    if (newGroupNames.count(group.GetName()) == 0) {
+      removedGroupNames.insert(group.GetName());
+    }
+  }
+
+  return removedGroupNames;
+}
+
+const std::string& findOrKey(
+    const std::unordered_map<std::string, std::string>& map,
+    const std::string& key) {
+  auto it = map.find(key);
+  if (it != map.end()) {
+    return it->second;
+  }
+
+  return key;
+}
+
+void updateGroupNames(
+    Group& group,
+    const std::unordered_map<std::string, std::string>& namesToChange) {
+  auto originalGroupName = group.GetName();
+  auto& groupName = findOrKey(namesToChange, originalGroupName);
+
+  bool hasChanged = groupName.c_str() != originalGroupName.c_str();
+
+  auto afterGroups = group.GetAfterGroups();
+  for (auto& afterGroup : afterGroups) {
+    const auto it = namesToChange.find(afterGroup);
+    if (it != namesToChange.end()) {
+      afterGroup = it->second;
+      hasChanged = true;
+    }
+  }
+
+  if (hasChanged) {
+    group = Group(groupName, afterGroups, group.GetDescription());
+  }
+}
+
+std::vector<Group>::iterator findGroup(std::vector<Group>& groups,
+                                       std::string_view targetGroupName) {
+  return std::find_if(groups.begin(), groups.end(), [&](const Group& group) {
+    return group.GetName() == targetGroupName;
+  });
+}
+
+std::vector<Group>::const_iterator findGroup(const std::vector<Group>& groups,
+                                             std::string_view targetGroupName) {
+  return std::find_if(groups.begin(), groups.end(), [&](const Group& group) {
+    return group.GetName() == targetGroupName;
+  });
+}
+
+void addGroup(std::vector<Group>& groups,
+              std::string_view targetGroupName,
+              std::vector<std::string>&& afterGroups,
+              std::optional<std::string> description) {
+  auto existingGroup = findGroup(groups, targetGroupName);
+
+  if (existingGroup != groups.end()) {
+    const auto existingAfterGroups = existingGroup->GetAfterGroups();
+
+    afterGroups.insert(afterGroups.end(),
+                       existingAfterGroups.begin(),
+                       existingAfterGroups.end());
+
+    *existingGroup = Group(
+        existingGroup->GetName(), afterGroups, existingGroup->GetDescription());
+  } else if (description.has_value()) {
+    groups.push_back(Group(targetGroupName, afterGroups, description.value()));
+  } else {
+    groups.push_back(Group(targetGroupName, afterGroups));
+  }
+}
+
+void recoverRemovedGroups(
+    std::vector<Group>& userGroups,
+    const std::unordered_map<std::string, std::string>& namesToChange,
+    const std::unordered_set<std::string>& namesToKeep,
+    const std::vector<Group>& oldMasterlistGroups) {
+  // Update all existing references to the removed group names in the user
+  // groups.
+  for (auto& group : userGroups) {
+    updateGroupNames(group, namesToChange);
+  }
+
+  const auto getReferencedGroupName =
+      [&namesToChange, &namesToKeep](
+          const std::string& groupName) -> std::optional<std::string> {
+    const auto it = namesToChange.find(groupName);
+
+    if (it != namesToChange.end()) {
+      return std::optional(it->second);
+    }
+
+    if (namesToKeep.count(groupName) != 0) {
+      return std::optional(groupName);
+    }
+
+    return std::nullopt;
+  };
+
+  // Finally, for each referenced group, pull out its old masterlist
+  // metadata and add it to the user metadata.
+  for (const auto& group : oldMasterlistGroups) {
+    auto originalGroupName = group.GetName();
+
+    auto groupName = getReferencedGroupName(originalGroupName);
+
+    if (groupName.has_value()) {
+      // This group's after groups may refer to other removed groups that
+      // will be renamed.
+      std::vector<std::string> afterGroups;
+      for (const auto& afterGroup : group.GetAfterGroups()) {
+        afterGroups.push_back(findOrKey(namesToChange, afterGroup));
+      }
+
+      addGroup(userGroups,
+               groupName.value(),
+               std::move(afterGroups),
+               group.GetDescription());
+    } else {
+      // Not a referenced group, but may load after one.
+      std::vector<std::string> afterGroups;
+      for (const auto& afterGroup : group.GetAfterGroups()) {
+        auto afterGroupName = getReferencedGroupName(afterGroup);
+
+        if (afterGroupName.has_value()) {
+          // This is a removed group, add this after entry to the user metadata.
+          afterGroups.push_back(afterGroupName.value());
+        }
+      }
+
+      if (!afterGroups.empty()) {
+        addGroup(userGroups,
+                 originalGroupName,
+                 std::move(afterGroups),
+                 std::nullopt);
+      }
+    }
+  }
+}
+
+std::unordered_map<std::string, std::string> recoverRemovedGroups(
+    loot::gui::Game& game,
+    const std::vector<Group>& oldMasterlistGroups,
+    const std::unordered_set<std::string>& removedGroupNames) {
+  std::unordered_map<std::string, std::string> namesToChange;
+  std::unordered_set<std::string> namesToKeep;
+
+  // Get references in user groups.
+  auto userGroups = game.getUserGroups();
+
+  // Don't rename groups that already have user metadata entries.
+  for (const auto& group : userGroups) {
+    auto groupName = group.GetName();
+    if (removedGroupNames.count(groupName) != 0) {
+      namesToKeep.insert(groupName);
+    }
+  }
+
+  // Look for removed groups that are referenced in user metadata.
+  for (const auto& group : userGroups) {
+    for (const auto& afterGroup : group.GetAfterGroups()) {
+      if (removedGroupNames.count(afterGroup) != 0 &&
+          namesToKeep.count(afterGroup) == 0) {
+        namesToChange.emplace(afterGroup, afterGroup + " (Recovered)");
+      }
+    }
+  }
+
+  // It's not currently possible to get all loaded plugin (user) metadata
+  // objects from libloot, so instead attempt it by querying the user
+  // metadata for each installed plugin.
+  for (const auto& plugin : game.getPlugins()) {
+    auto metadata = game.getUserMetadata(plugin->GetName());
+
+    if (metadata.has_value() && metadata.value().GetGroup().has_value()) {
+      const std::string groupName = metadata.value().GetGroup().value();
+      if (removedGroupNames.count(groupName) != 0 &&
+          namesToKeep.count(groupName) == 0) {
+        const auto it =
+            namesToChange.emplace(groupName, groupName + " (Recovered)");
+
+        // Might as well update the plugin metadata at the same time.
+        metadata.value().SetGroup(it.first->second);
+
+        game.addUserMetadata(metadata.value());
+      }
+    }
+  }
+
+  // Get references in old masterlist groups.
+  std::vector<std::string> groupProcessingQueue;
+  for (const auto& group : oldMasterlistGroups) {
+    auto groupName = group.GetName();
+    if (namesToChange.count(groupName) != 0 ||
+        namesToKeep.count(groupName) != 0) {
+      // This group will be recovered, make sure that the groups it loads after
+      // either still exist or will also be recovered.
+
+      for (const auto& afterGroup : group.GetAfterGroups()) {
+        groupProcessingQueue.push_back(afterGroup);
+      }
+    } else if (removedGroupNames.count(groupName) != 0) {
+      // This isn't marked for recovery, but it will need to be recovered if it
+      // references another group that is marked for recovery.
+      for (const auto& afterGroup : group.GetAfterGroups()) {
+        if (namesToChange.count(afterGroup) != 0 ||
+            namesToKeep.count(afterGroup) != 0) {
+          groupProcessingQueue.push_back(groupName);
+          break;
+        }
+      }
+    }
+  }
+
+  while (!groupProcessingQueue.empty()) {
+    std::string groupName = groupProcessingQueue.back();
+    groupProcessingQueue.pop_back();
+
+    if (removedGroupNames.count(groupName) != 0) {
+      // This group was removed.
+      if (namesToKeep.count(groupName) == 0) {
+        namesToChange.emplace(groupName, groupName + " (Recovered)");
+      }
+
+      // Also process the groups this one loads after to make sure that all of
+      // them will still exist.
+      auto it = findGroup(oldMasterlistGroups, groupName);
+      if (it != oldMasterlistGroups.end()) {
+        for (const auto& afterGroup : it->GetAfterGroups()) {
+          groupProcessingQueue.push_back(afterGroup);
+        }
+      }
+    }
+  }
+
+  recoverRemovedGroups(
+      userGroups, namesToChange, namesToKeep, oldMasterlistGroups);
+
+  game.setUserGroups(userGroups);
+  game.saveUserMetadata();
+
+  return namesToChange;
+}
 }
 
 namespace loot {
@@ -480,6 +740,8 @@ std::string getMetadataAsBBCodeYaml(const gui::Game& game,
 std::vector<LoadOrderTuple> mapToLoadOrderTuples(
     const gui::Game& game,
     const std::vector<std::string>& loadOrder) {
+  const auto logger = getLogger();
+
   std::vector<LoadOrderTuple> data;
   data.reserve(loadOrder.size());
 
@@ -491,6 +753,13 @@ std::vector<LoadOrderTuple> mapToLoadOrderTuples(
   for (const auto& pluginName : loadOrder) {
     auto plugin = game.getPlugin(pluginName);
     if (!plugin) {
+      if (logger) {
+        logger->warn(
+            "The plugin \"{}\" appears in the given load order but is not "
+            "loaded",
+            pluginName);
+      }
+
       continue;
     }
 
@@ -510,8 +779,8 @@ std::vector<LoadOrderTuple> mapToLoadOrderTuples(
     const auto activeLoadOrderIndex =
         isActive ? std::optional(numberOfActivePlugins) : std::nullopt;
 
-    data.push_back(
-        std::make_tuple(std::shared_ptr(std::move(plugin)), activeLoadOrderIndex, isActive));
+    data.push_back(std::make_tuple(
+        std::shared_ptr(std::move(plugin)), activeLoadOrderIndex, isActive));
 
     if (isActive) {
       if (isLight) {
@@ -572,7 +841,7 @@ void CreationClubPlugins::load(GameId gameId,
   creationClubPlugins_ = readFilenamesInFile(cccFilePath);
 }
 
-bool CreationClubPlugins::isCreationClubPlugin(const std::string& name) const {
+bool CreationClubPlugins::isCreationClubPlugin(std::string_view name) const {
   return creationClubPlugins_.count(Filename(name)) != 0;
 }
 
@@ -736,6 +1005,10 @@ void Game::loadAllInstalledPlugins(bool headersOnly) {
     loadedPluginNames.push_back(plugin->GetName());
   }
 
+  // Remove existing "removed plugin" messages before rechecking to avoid
+  // duplication.
+  removeMessagesFrom({MessageSource::removedPluginsCheck});
+
   appendMessages(createMessagesForRemovedPlugins(
       checkForRemovedPlugins(installedPluginNames, loadedPluginNames)));
 
@@ -831,9 +1104,10 @@ std::vector<std::string> Game::sortPlugins() {
   loadCurrentLoadOrderState();
 
   try {
-    // Clear any existing game-specific messages, as these only relate to
-    // state that has been changed by sorting.
-    clearMessages();
+    // Clear messages that relate to previous sorting runs.
+    removeMessagesFrom({MessageSource::cyclicInteraction,
+                        MessageSource::missingGroup,
+                        MessageSource::missingMaster});
 
     const auto loadOrder = gameHandle_->GetLoadOrder();
 
@@ -851,6 +1125,10 @@ std::vector<std::string> Game::sortPlugins() {
 
     gameHandle_->LoadPlugins(pluginPaths, false);
     auto sortedPlugins = gameHandle_->SortPlugins(loadOrder);
+
+    // Remove existing "removed plugin" messages before rechecking to avoid
+    // duplication.
+    removeMessagesFrom({MessageSource::removedPluginsCheck});
 
     appendMessages(createMessagesForRemovedPlugins(
         checkForRemovedPlugins(loadOrder, sortedPlugins)));
@@ -870,7 +1148,7 @@ std::vector<std::string> Game::sortPlugins() {
 
     appendMessage(createPlainTextSourcedMessage(
         MessageType::error,
-        MessageSource::caughtException,
+        MessageSource::missingMaster,
         translate(
             "Sorting failed because there is at least one installed plugin "
             "that depends on at least one plugin that is not installed.")));
@@ -933,10 +1211,12 @@ std::vector<SourcedMessage> Game::getMessages(
   return output;
 }
 
-void Game::clearMessages() { messages_.clear(); }
-
 void Game::loadMetadata() {
   const auto logger = getLogger();
+
+  removeMessagesFrom({MessageSource::parsingMetadataFailed});
+
+  const auto oldMasterlistGroups = getMasterlistGroups();
 
   try {
     const auto masterlistPath = getMasterlistPath();
@@ -961,7 +1241,7 @@ void Game::loadMetadata() {
     }
     appendMessage(SourcedMessage{
         MessageType::error,
-        MessageSource::caughtException,
+        MessageSource::parsingMetadataFailed,
         fmt::format(
             translate("An error occurred while parsing the metadata list(s): "
                       "{0}.\n\nTry updating your masterlist to resolve the "
@@ -993,7 +1273,7 @@ void Game::loadMetadata() {
 
     appendMessage(SourcedMessage{
         MessageType::error,
-        MessageSource::caughtException,
+        MessageSource::parsingMetadataFailed,
         fmt::format(
             translate(
                 "An error occurred while parsing your userlist: {0}.\n\nThis "
@@ -1006,6 +1286,84 @@ void Game::loadMetadata() {
                 "documentation]({1})."),
             escapeMarkdownASCIIPunctuation(e.what()),
             docUrl)});
+  }
+
+  const auto newMasterlistGroups = getMasterlistGroups();
+
+  const auto removedGroupNames =
+      getRemovedGroups(oldMasterlistGroups, newMasterlistGroups);
+
+  if (!removedGroupNames.empty()) {
+    auto recovered =
+        recoverRemovedGroups(*this, oldMasterlistGroups, removedGroupNames);
+
+    std::vector<std::pair<std::string, std::string>> recoveredGroups(
+        recovered.begin(), recovered.end());
+
+    std::sort(recoveredGroups.begin(), recoveredGroups.end());
+
+    for (const auto& [oldName, newName] : recoveredGroups) {
+      if (logger) {
+        logger->debug(
+            "The group \"{}\" was removed from the masterlist but referenced "
+            "by user metadata. It has been renamed to \"{}\" and has been "
+            "added to the userlist.",
+            oldName,
+            newName);
+      }
+
+      appendMessage(SourcedMessage{
+          MessageType::warn,
+          MessageSource::recoveredGroup,
+          fmt::format(
+              translate(
+                  "The group \"{0}\" has been removed from the masterlist but "
+                  "was referenced by user metadata. It has been renamed to "
+                  "\"{1}\" and reintroduced as a user group."),
+              oldName,
+              newName)});
+    }
+  }
+
+  checkForRecoveredGroups();
+}
+
+void Game::checkForRecoveredGroups() {
+  bool hasRecoveredGroup = false;
+  std::vector<std::string> recoveredGroupNames;
+  for (const auto& group : getUserGroups()) {
+    if (boost::ends_with(group.GetName(), " (Recovered)")) {
+      hasRecoveredGroup = true;
+      recoveredGroupNames.push_back(group.GetName());
+    }
+  }
+
+  // Remove recovered group messages for group names that are no longer present.
+  auto it = std::remove_if(
+      messages_.begin(), messages_.end(), [&](const SourcedMessage& message) {
+        return message.source == MessageSource::recoveredGroup &&
+               std::none_of(recoveredGroupNames.begin(),
+                            recoveredGroupNames.end(),
+                            [&](const std::string& groupName) {
+                              return boost::contains(message.text,
+                                                     "\"" + groupName + "\"");
+                            });
+      });
+
+  messages_.erase(it, messages_.end());
+
+  // Remove and regenerate the generic recovered group message if needed.
+  removeMessagesFrom({MessageSource::recoveredGroupDetected});
+
+  if (hasRecoveredGroup) {
+    appendMessage(SourcedMessage{
+        MessageType::warn,
+        MessageSource::recoveredGroupDetected,
+        translate("One or more groups with names that end with \" "
+                  "(Recovered)\" were found in your group assignments. Please "
+                  "check your setup, and either reassign affected plugins to "
+                  "masterlist groups, or rename the user groups to not include "
+                  "the \"(Recovered)\" suffix in their names.")});
   }
 }
 
@@ -1149,10 +1507,17 @@ std::vector<std::filesystem::path> Game::getInstalledPluginPaths() const {
                           dataPathFilenames);
 }
 
-void Game::appendMessages(std::vector<SourcedMessage> messages) {
-  for (auto& message : messages) {
-    appendMessage(message);
-  }
+void Game::appendMessages(const std::vector<SourcedMessage>& messages) {
+  messages_.insert(messages_.end(), messages.begin(), messages.end());
+}
+
+void Game::removeMessagesFrom(const std::set<MessageSource>& sources) {
+  auto it = std::remove_if(
+      messages_.begin(), messages_.end(), [&](const SourcedMessage& message) {
+        return sources.count(message.source) != 0;
+      });
+
+  messages_.erase(it, messages_.end());
 }
 
 std::optional<std::filesystem::path> Game::resolveGameFilePath(
@@ -1173,6 +1538,8 @@ void Game::appendMessage(const SourcedMessage& message) {
 
 void Game::loadCurrentLoadOrderState() {
   try {
+    removeMessagesFrom({MessageSource::loadLoadOrderStateFailed});
+
     gameHandle_->LoadCurrentLoadOrderState();
   } catch (const std::exception& e) {
     const auto logger = getLogger();
@@ -1181,7 +1548,7 @@ void Game::loadCurrentLoadOrderState() {
     }
     appendMessage(createPlainTextSourcedMessage(
         MessageType::error,
-        MessageSource::caughtException,
+        MessageSource::loadLoadOrderStateFailed,
         translate("Failed to load the current load order, "
                   "information displayed may be incorrect.")));
   }

@@ -21,7 +21,7 @@ A few items in the menus are not self-explanatory:
   3. Hexadecimal light plugin index
   4. Plugin name
 
-- "Copy Content" copies the data displayed in LOOT's cards to the clipboard as YAML-formatted text.
+- "Copy Content" copies the data displayed in LOOT's cards to the clipboard as Markdown-formatted text.
 - "Refresh Content" re-scans the installed plugins' headers and regenerates the content LOOT displays. This can be useful if you have made changes to your installed plugins while LOOT was open. Refreshing content will also discard any CRCs that were previously calculated, as they may have changed.
 - The "Search Cards…" option allows you to search all the visible text displayed on plugin cards, so the results may be affected by any filters you have active. Searching can optionally be done using case-insensitive Perl-like regular expressions instead of case-insensitive text comparison.
 
@@ -42,7 +42,11 @@ The masterlist update process updates the active game's masterlist to the latest
 
 By :ref:`default <update-masterlist>`, sorting first updates the masterlist. LOOT then calculates a load order for your plugins, using their internal data and any metadata they may have. If a cyclic interaction is detected (eg. A depends on B depends on A), then sorting will fail.
 
-Once LOOT has calculated a load order, it is compared with the current load order. If the current and calculated load orders are identical, LOOT will inform you that no changes were made via a status bar notification. If the calculated load order contains changes, the plugin cards are sorted into that order and the masterlist update and sorting buttons are replaced with Apply Sorted Load Order and Discard Sorted Load Order buttons, which apply and discard the calculated load order respectively. Changing games is disabled until the calculated load order is applied or discarded.
+Once LOOT has calculated a load order, it is compared with the current load order. If the current and calculated load orders are identical, LOOT will inform you that no changes were made via a status bar notification. If the calculated load order contains changes, the plugin cards are sorted into that order and the masterlist update and sorting buttons are replaced with Apply Sorted Load Order, Discard Sorted Load Order and View Load Order Changes buttons. The first two apply and discard the calculated load order respectively. Changing games is disabled until the calculated load order is applied or discarded.
+
+.. image:: ../../images/compare_dialog.windows.png
+
+The View Load Order Changes button opens a dialog that displays the current and sorted load orders side-by-side in a diff view that indicates what has changed. Clicking on a plugin in one list will select the same plugin in the other list, and scrolling one list will also scroll the other list to the same position.
 
 LOOT is able to sort plugins ghosted by Wrye Bash, and can extract Bash Tags and version numbers from plugin descriptions. Provided that they have the ``Filter`` Bash Tag present in their description, LOOT can recognise filter patches and so avoid displaying unnecessary error messages for any of their masters that may be missing.
 

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -28,7 +26,7 @@
 #include "gui/qt/helpers.h"
 
 namespace loot {
-UpdatePreludeTask::UpdatePreludeTask(const LootState &state) :
+UpdatePreludeTask::UpdatePreludeTask(const LootState& state) :
     preludeSource(state.getSettings().getPreludeSource()),
     preludePath(state.getPaths().getPreludePath()) {}
 
@@ -72,7 +70,7 @@ void UpdatePreludeTask::execute() {
             &UpdatePreludeTask::onNetworkError);
     connect(
         reply, &QNetworkReply::sslErrors, this, &UpdatePreludeTask::onSSLError);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }
@@ -85,7 +83,7 @@ void UpdatePreludeTask::onReplyFinished() {
     }
 
     auto responseData =
-        readHttpResponse(qobject_cast<QNetworkReply *>(sender()));
+        readHttpResponse(qobject_cast<QNetworkReply*>(sender()));
 
     if (!responseData.has_value()) {
       emit error("Prelude update response errored");
@@ -96,20 +94,20 @@ void UpdatePreludeTask::onReplyFinished() {
         updateFileWithData(preludePath, responseData.value());
 
     emit finished(preludeUpdated);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }
 
-UpdateMasterlistTask::UpdateMasterlistTask(const gui::Game &game) :
+UpdateMasterlistTask::UpdateMasterlistTask(const gui::Game& game) :
     UpdateMasterlistTask(game.getSettings().getFolderName(),
                          game.getSettings().getMasterlistSource(),
                          game.getMasterlistPath()) {}
 
 UpdateMasterlistTask::UpdateMasterlistTask(
-    const std::string &gameFolderName,
-    const std::string &masterlistSource,
-    const std::filesystem::path &masterlistPath) :
+    const std::string& gameFolderName,
+    const std::string& masterlistSource,
+    const std::filesystem::path& masterlistPath) :
     gameFolderName(gameFolderName),
     masterlistSource(masterlistSource),
     masterlistPath(masterlistPath) {}
@@ -156,7 +154,7 @@ void UpdateMasterlistTask::execute() {
             &QNetworkReply::sslErrors,
             this,
             &UpdateMasterlistTask::onSSLError);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }
@@ -169,7 +167,7 @@ void UpdateMasterlistTask::onReplyFinished() {
     }
 
     auto responseData =
-        readHttpResponse(qobject_cast<QNetworkReply *>(sender()));
+        readHttpResponse(qobject_cast<QNetworkReply*>(sender()));
 
     if (!responseData.has_value()) {
       emit error("Masterlist update response errored");
@@ -180,7 +178,7 @@ void UpdateMasterlistTask::onReplyFinished() {
         updateFileWithData(masterlistPath, responseData.value());
 
     emit finished(std::make_pair(gameFolderName, masterlistUpdated));
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     handleException(e);
   }
 }

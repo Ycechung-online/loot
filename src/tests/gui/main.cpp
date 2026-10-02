@@ -1,9 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-    Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -58,8 +57,9 @@
 #include "tests/gui/state/game/helpers_test.h"
 #include "tests/gui/state/loot_paths_test.h"
 #include "tests/gui/state/loot_settings_test.h"
+#include "tests/printers.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // Set the logger to use a null sink.
   spdlog::create<spdlog::sinks::null_sink_st>("loot_logger");
 

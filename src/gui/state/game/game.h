@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -75,7 +73,7 @@ class CreationClubPlugins {
 public:
   void load(GameId gameId, const std::filesystem::path& gamePath);
 
-  bool isCreationClubPlugin(const std::string& name) const;
+  bool isCreationClubPlugin(std::string_view name) const;
 
 private:
   // Use Filename to benefit from libloot's case-insensitive comparisons.
@@ -146,9 +144,9 @@ public:
   std::vector<SourcedMessage> getMessages(std::string_view language,
                                           bool warnOnCaseSensitivePaths) const;
   void appendMessage(const SourcedMessage& message);
-  void clearMessages();
 
   void loadMetadata();
+  void checkForRecoveredGroups();
   std::vector<std::string> getKnownBashTags() const;
 
   std::vector<Group> getGroups() const;
@@ -185,7 +183,8 @@ private:
   std::optional<std::filesystem::path> resolveGameFilePath(
       const std::string& pluginName) const;
 
-  void appendMessages(std::vector<SourcedMessage> messages);
+  void appendMessages(const std::vector<SourcedMessage>& messages);
+  void removeMessagesFrom(const std::set<MessageSource>& sources);
 
   void loadCurrentLoadOrderState();
 

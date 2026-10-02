@@ -1,26 +1,25 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014-2016    WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 #ifndef LOOT_TESTS_GUI_BACKUP_TEST
 #define LOOT_TESTS_GUI_BACKUP_TEST
 
@@ -73,18 +72,7 @@ protected:
   std::filesystem::path destRoot;
 };
 
-class CompressDirectoryTest : public BackupTest {
-protected:
-  static size_t getStreamSize(std::istream& stream) {
-    std::streampos startingPosition = stream.tellg();
-
-    stream.seekg(0, std::ios_base::end);
-    size_t streamSize = stream.tellg();
-    stream.seekg(startingPosition, std::ios_base::beg);
-
-    return streamSize;
-  }
-};
+class CompressDirectoryTest : public BackupTest {};
 
 class CreateBackupTest : public BackupTest {};
 

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -78,6 +76,7 @@ class CardSizingCache {
 public:
   explicit CardSizingCache(QWidget* cardParentWidget);
 
+  void clear();
   void update(const QAbstractItemModel* model);
   void update(const QModelIndex& topLeft, const QModelIndex& bottomRight);
   void update(const QAbstractItemModel*, int firstRow, int lastRow);
@@ -99,8 +98,8 @@ public:
   CardDelegate(QListView* parent, CardSizingCache& cardSizingCache);
 
   void setIcons();
-  void refreshMessages();
-  void refreshStyling();
+
+  void invalidateCache();
 
   void paint(QPainter* painter,
              const QStyleOptionViewItem& option,

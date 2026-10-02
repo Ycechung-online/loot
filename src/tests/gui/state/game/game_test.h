@@ -1,26 +1,26 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2024 Dirk Stolle
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_GAME_GAME_TEST
 #define LOOT_TESTS_GUI_STATE_GAME_GAME_TEST
@@ -38,81 +38,111 @@ along with LOOT.  If not, see
 #include "tests/gui/test_helpers.h"
 
 namespace loot::test {
-class CreationClubPluginsTest : public CommonGameTestFixture {
+class CreationClubPluginsTest : public FilesystemTest {
 protected:
-  CreationClubPluginsTest() : CommonGameTestFixture(GameId::tes5se) {}
+  static constexpr std::string_view CC_PLUGIN_NAME{"ccPlugin.esp"};
 
-  std::string ccPluginName{"ccPlugin.esp"};
-  std::filesystem::path cccPath{gamePath / "Skyrim.ccc"};
+  std::filesystem::path cccPath{rootPath_ / "Skyrim.ccc"};
 };
 
 TEST_F(CreationClubPluginsTest,
        loadShouldClearCCPluginSetIfCCCFileDoesNotExist) {
   std::ofstream out(cccPath);
-  out << ccPluginName;
+  out << CC_PLUGIN_NAME;
   out.close();
 
   CreationClubPlugins ccPlugins;
 
-  ccPlugins.load(GameId::tes5se, gamePath);
+  ccPlugins.load(GameId::tes5se, rootPath_);
 
-  EXPECT_TRUE(ccPlugins.isCreationClubPlugin(ccPluginName));
+  EXPECT_TRUE(ccPlugins.isCreationClubPlugin(CC_PLUGIN_NAME));
 
-  ccPlugins.load(GameId::tes5se, gamePath);
+  ccPlugins.load(GameId::tes5se, rootPath_);
 
   std::filesystem::remove(cccPath);
 
-  ccPlugins.load(GameId::tes5se, gamePath);
+  ccPlugins.load(GameId::tes5se, rootPath_);
 
-  EXPECT_FALSE(ccPlugins.isCreationClubPlugin(ccPluginName));
+  EXPECT_FALSE(ccPlugins.isCreationClubPlugin(CC_PLUGIN_NAME));
 }
 
 TEST_F(CreationClubPluginsTest, loadShouldTrimCRLFLineEndingsFromCCCFileLines) {
   CreationClubPlugins ccPlugins;
 
   std::ofstream out(cccPath, std::ios::out | std::ios::binary);
-  out << ccPluginName << "\r\n";
+  out << CC_PLUGIN_NAME << "\r\n";
   out.close();
 
-  ccPlugins.load(GameId::tes5se, gamePath);
+  ccPlugins.load(GameId::tes5se, rootPath_);
 
-  EXPECT_TRUE(ccPlugins.isCreationClubPlugin(ccPluginName));
+  EXPECT_TRUE(ccPlugins.isCreationClubPlugin(CC_PLUGIN_NAME));
 }
 }
 
-namespace loot::gui::test {
+namespace loot::test {
+using ::loot::gui::Game;
+
+std::vector<std::string> readBackedUpLoadOrder(
+    const std::filesystem::path& backupPath) {
+  auto file = QFile(QString::fromStdString(backupPath.u8string()));
+
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    throw std::runtime_error("Failed to open file at " + backupPath.u8string() +
+                             " due to " + file.errorString().toStdString());
+  }
+  const auto content = file.readAll();
+  file.close();
+
+  const auto plugins =
+      QJsonDocument::fromJson(content).object().value("loadOrder").toArray();
+
+  std::vector<std::string> loadOrder;
+  for (const auto plugin : plugins) {
+    const auto pluginName = plugin.toString();
+    if (!pluginName.isEmpty()) {
+      loadOrder.push_back(pluginName.toStdString());
+    }
+  }
+
+  return loadOrder;
+}
+
+SourcedMessage recoveredGroupMessage(std::string_view groupName) {
+  return SourcedMessage{
+      MessageType::warn,
+      MessageSource::recoveredGroup,
+      fmt::format("The group \"{0}\" has been removed from the masterlist but "
+                  "was referenced by user metadata. It has been renamed to "
+                  "\"{1}\" and reintroduced as a user group.",
+                  groupName,
+                  std::string(groupName) + " (Recovered)")};
+}
+
 class GameTest : public loot::test::CommonGameTestFixture,
                  public testing::WithParamInterface<GameId> {
 protected:
   GameTest() :
       CommonGameTestFixture(GetParam()),
-      loadOrderToSet_({
-          masterFile,
-          BLANK_ESM,
-          BLANK_MASTER_DEPENDENT_ESM,
-          BLANK_DIFFERENT_ESM,
-          BLANK_DIFFERENT_MASTER_DEPENDENT_ESM,
-          BLANK_DIFFERENT_ESP,
-          BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP,
-          BLANK_ESP,
-          BLANK_MASTER_DEPENDENT_ESP,
-          BLANK_DIFFERENT_MASTER_DEPENDENT_ESP,
-          BLANK_PLUGIN_DEPENDENT_ESP,
-      }),
-      detail_(std::vector<MessageContent>({
-          MessageContent("detail"),
-      })),
       defaultGameSettings(GameSettings(GetParam(), u8"non\u00C1sciiFolder")
                               .setMinimumHeaderVersion(0.0f)
                               .setGamePath(gamePath)
                               .setGameLocalPath(localPath)) {
+#ifndef _WIN32
     // Do some preliminary locale / UTF-8 support setup, as GetMessages()
     // indirectly calls boost::locale::to_lower().
     boost::locale::generator gen;
     std::locale::global(gen("en.UTF-8"));
+#endif
   }
 
-  Game createInitialisedGame() {
+  void createMorrowindIni() const {
+    if (GetParam() == GameId::tes3) {
+      // Avoid an error reading the load order.
+      touch(gamePath / "Morrowind.ini");
+    }
+  }
+
+  Game createInitialisedGame() const {
     Game game(defaultGameSettings, lootDataPath, "");
     game.init();
     return game;
@@ -131,7 +161,8 @@ protected:
     }
   }
 
-  std::vector<std::filesystem::path> findLoadOrderBackups(const Game& game) {
+  std::vector<std::filesystem::path> findLoadOrderBackups(
+      const Game& game) const {
     using std::filesystem::u8path;
 
     const auto parentPath = lootDataPath / u8path("games") /
@@ -157,28 +188,6 @@ protected:
     return paths;
   }
 
-  std::vector<std::string> readBackedUpLoadOrder(
-      const std::filesystem::path& backupPath) {
-    auto file = QFile(QString::fromStdString(backupPath.u8string()));
-
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    const auto content = file.readAll();
-    file.close();
-
-    const auto plugins =
-        QJsonDocument::fromJson(content).object().value("loadOrder").toArray();
-
-    std::vector<std::string> loadOrder;
-    for (const auto plugin : plugins) {
-      const auto pluginName = plugin.toString();
-      if (!pluginName.isEmpty()) {
-        loadOrder.push_back(pluginName.toStdString());
-      }
-    }
-
-    return loadOrder;
-  }
-
   uint32_t getBlankEsmCrc() const {
     switch (GetParam()) {
       case GameId::tes3:
@@ -192,10 +201,6 @@ protected:
         return 0x6A1273DC;
     }
   }
-
-  std::vector<std::string> loadOrderToSet_;
-
-  std::vector<MessageContent> detail_;
 
   GameSettings defaultGameSettings;
 };
@@ -417,6 +422,10 @@ TEST_P(GameTest, initShouldNotThrowIfGameAndLocalPathsAreNotEmpty) {
 }
 
 TEST_P(GameTest, checkInstallValidityShouldCheckThatRequirementsArePresent) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+  setLoadOrder({{BLANK_ESM, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -440,9 +449,9 @@ TEST_P(GameTest, checkInstallValidityShouldCheckThatRequirementsArePresent) {
 
 TEST_P(GameTest,
        checkInstallValidityShouldHandleNonAsciiFileMetadataCorrectly) {
-  using std::filesystem::u8path;
-  ASSERT_NO_THROW(std::filesystem::rename(
-      dataPath / BLANK_ESP, dataPath / u8path(u8"nonAsc\u00EDi.esp.ghost")));
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP, NON_ASCII_ESP);
+  copyPlugin(BLANK_ESP, u8"nonAsc\u00EDi.esp.ghost");
 
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
@@ -461,6 +470,10 @@ TEST_P(GameTest,
 TEST_P(
     GameTest,
     checkInstallValidityShouldUseDisplayNamesInRequirementMessagesIfPresent) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+  setLoadOrder({{BLANK_ESM, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -485,6 +498,10 @@ TEST_P(
 TEST_P(
     GameTest,
     checkInstallValidityShouldNotDisplayMoreThanOneRequirementMessageForAnyOneDisplayName) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+  setLoadOrder({{BLANK_ESM, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -509,13 +526,17 @@ TEST_P(
 
 TEST_P(GameTest,
        checkInstallValidityShouldAddAMessageForActiveIncompatiblePlugins) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+  setLoadOrder({{BLANK_ESM, true}, {BLANK_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
   PluginMetadata metadata(BLANK_ESM);
   metadata.SetIncompatibilities({
       File(MISSING_ESP),
-      File(masterFile),
+      File(BLANK_ESP),
   });
 
   auto messages =
@@ -524,7 +545,7 @@ TEST_P(GameTest,
                 SourcedMessage{MessageType::error,
                                MessageSource::incompatibilityMetadata,
                                "This plugin is incompatible with \"" +
-                                   escapeMarkdownASCIIPunctuation(masterFile) +
+                                   escapeMarkdownASCIIPunctuation(BLANK_ESP) +
                                    "\", but both are present."},
             }),
             messages);
@@ -533,6 +554,9 @@ TEST_P(GameTest,
 TEST_P(
     GameTest,
     checkInstallValidityShouldShowAMessageForIncompatibleNonPluginFilesThatArePresent) {
+  copyPlugin(BLANK_ESM);
+  setLoadOrder({{BLANK_ESM, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -561,13 +585,17 @@ TEST_P(
 TEST_P(
     GameTest,
     checkInstallValidityShouldUseDisplayNamesInIncompatibilityMessagesIfPresent) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+  setLoadOrder({{BLANK_ESM, true}, {BLANK_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
   PluginMetadata metadata(BLANK_ESM);
   metadata.SetIncompatibilities({
       File(MISSING_ESP),
-      File(masterFile, "foo"),
+      File(BLANK_ESP, "foo"),
   });
 
   auto messages =
@@ -584,6 +612,9 @@ TEST_P(
 TEST_P(
     GameTest,
     checkInstallValidityShouldNotDisplayMoreThanOneIncompatibilityMessageForAnyOneDisplayName) {
+  copyPlugin(BLANK_ESM);
+  setLoadOrder({{BLANK_ESM, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -610,6 +641,8 @@ TEST_P(
 }
 
 TEST_P(GameTest, checkInstallValidityShouldGenerateMessagesFromDirtyInfo) {
+  copyPlugin(BLANK_ESM);
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -638,6 +671,10 @@ TEST_P(GameTest, checkInstallValidityShouldGenerateMessagesFromDirtyInfo) {
 TEST_P(
     GameTest,
     checkInstallValidityShouldCheckIfAPluginsMastersAreAllPresentAndActiveIfNoFilterTagIsPresent) {
+  copyPlugin(BLANK_DIFFERENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_MASTER_DEPENDENT_ESP);
+  setLoadOrder({{BLANK_DIFFERENT_MASTER_DEPENDENT_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -659,6 +696,10 @@ TEST_P(
 TEST_P(
     GameTest,
     checkInstallValidityShouldNotCheckIfAPluginsMastersAreAllActiveIfAFilterTagIsPresent) {
+  copyPlugin(BLANK_DIFFERENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_MASTER_DEPENDENT_ESP);
+  setLoadOrder({{BLANK_DIFFERENT_MASTER_DEPENDENT_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -673,6 +714,10 @@ TEST_P(
 TEST_P(
     GameTest,
     checkInstallValidityShouldNotCompareConditionsWhenCheckingIfAFilterTagIsPresent) {
+  copyPlugin(BLANK_DIFFERENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_MASTER_DEPENDENT_ESP);
+  setLoadOrder({{BLANK_DIFFERENT_MASTER_DEPENDENT_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -689,8 +734,8 @@ TEST_P(GameTest, checkInstallValidityShouldCheckThatAnEslIsValid) {
     return;
   }
 
-  std::string blankEsl = "blank.esl";
-  std::filesystem::copy(dataPath / BLANK_ESM, dataPath / blankEsl);
+  const auto blankEsl = "blank.esl";
+  copyPlugin(BLANK_ESM, blankEsl);
   std::fstream out(
       dataPath / blankEsl,
       std::ios_base::in | std::ios_base::out | std::ios_base::binary);
@@ -719,6 +764,8 @@ TEST_P(GameTest, checkInstallValidityShouldCheckThatAMediumPluginIsValid) {
   if (GetParam() != GameId::starfield) {
     return;
   }
+
+  copyPlugin(BLANK_ESM);
 
   std::fstream out(
       dataPath / BLANK_ESM,
@@ -749,6 +796,8 @@ TEST_P(GameTest, checkInstallValidityShouldCheckThatAMediumPluginIsValid) {
 TEST_P(
     GameTest,
     checkInstallValidityShouldCheckThatAPluginHeaderVersionIsNotLessThanTheMinimum) {
+  copyPlugin(BLANK_ESM);
+
   Game game = createInitialisedGame();
   game.getSettings().setMinimumHeaderVersion(5.1f);
   game.loadAllInstalledPlugins(false);
@@ -779,6 +828,8 @@ TEST_P(
 }
 
 TEST_P(GameTest, checkInstallValidityShouldCheckThatAPluginGroupExists) {
+  copyPlugin(BLANK_ESM);
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -802,6 +853,9 @@ TEST_P(GameTest, checkInstallValidityShouldResolveExternalPluginPaths) {
     // Only FO4 has external plugins.
     return;
   }
+
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
 
   loot::test::touch(gamePath / "appxmanifest.xml");
   const auto dlcPluginName = "DLCCoast.esm";
@@ -833,8 +887,10 @@ TEST_P(
     return;
   }
 
-  std::string blankEsl = "Blank.esl";
-  std::filesystem::copy(dataPath / BLANK_ESM, dataPath / blankEsl);
+  const auto blankEsl = "Blank.esl";
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESM, blankEsl);
+  copyPlugin(BLANK_ESP);
 
   // Light-flag esm
   std::fstream out(
@@ -941,13 +997,25 @@ TEST_P(
     redatePluginsShouldRedatePluginsForSkyrimAndSkyrimSEAndDoNothingForOtherGames) {
   using std::filesystem::u8path;
 
+  const std::vector<std::pair<std::string, bool>> loadOrder{
+      {BLANK_ESM, false},
+      {BLANK_DIFFERENT_ESM, false},
+      {BLANK_ESP, false},
+      {BLANK_DIFFERENT_ESP, false}};
+
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_DIFFERENT_ESM);
+  copyPlugin(BLANK_ESP, std::string(BLANK_ESP) + ".ghost");
+  copyPlugin(BLANK_DIFFERENT_ESP);
+
+  setLoadOrder(loadOrder);
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
-  std::vector<std::pair<std::string, bool>> loadOrder = getInitialLoadOrder();
-
   // First set reverse timestamps to be sure.
-  auto time = std::filesystem::last_write_time(dataPath / u8path(masterFile));
+  auto time = std::filesystem::last_write_time(dataPath /
+                                               u8path(loadOrder.front().first));
   for (size_t i = 1; i < loadOrder.size(); ++i) {
     auto pluginPath = dataPath / u8path(loadOrder[i].first);
     if (!std::filesystem::exists(pluginPath))
@@ -978,14 +1046,17 @@ TEST_P(
 TEST_P(
     GameTest,
     loadAllInstalledPluginsWithHeadersOnlyTrueShouldLoadTheHeadersOfAllInstalledPlugins) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+
   Game game = createInitialisedGame();
 
   EXPECT_NO_THROW(game.loadAllInstalledPlugins(true));
-  EXPECT_EQ(12, game.getPlugins().size());
+  EXPECT_EQ(2, game.getPlugins().size());
 
   // Check that one plugin's header has been read.
-  ASSERT_NO_THROW(game.getPlugin(masterFile));
-  auto plugin = game.getPlugin(masterFile);
+  ASSERT_NO_THROW(game.getPlugin(BLANK_ESM));
+  auto plugin = game.getPlugin(BLANK_ESM);
   EXPECT_EQ("5.0", plugin->GetVersion().value());
 
   // Check that only the header has been read.
@@ -995,10 +1066,13 @@ TEST_P(
 TEST_P(
     GameTest,
     loadAllInstalledPluginsWithHeadersOnlyFalseShouldFullyLoadAllInstalledPlugins) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_ESP);
+
   Game game = createInitialisedGame();
 
   EXPECT_NO_THROW(game.loadAllInstalledPlugins(false));
-  EXPECT_EQ(12, game.getPlugins().size());
+  EXPECT_EQ(2, game.getPlugins().size());
 
   // Check that one plugin's header has been read.
   ASSERT_NO_THROW(game.getPlugin(BLANK_ESM));
@@ -1011,6 +1085,10 @@ TEST_P(
 
 TEST_P(GameTest,
        loadAllInstalledPluginsShouldNotGenerateWarningsForGhostedPlugins) {
+  createMorrowindIni();
+
+  copyPlugin(BLANK_ESM, std::string(BLANK_ESM) + ".ghost");
+
   Game game = createInitialisedGame();
 
   EXPECT_NO_THROW(game.loadAllInstalledPlugins(false));
@@ -1034,7 +1112,8 @@ TEST_P(GameTest, loadAllInstalledPluginsShouldLoadPluginsAtExternalPaths) {
   const auto dlcDataPath = gamePath.parent_path().parent_path() /
                            "Fallout 4- Far Harbor (PC)" / "Content" / "Data";
   std::filesystem::create_directories(dlcDataPath);
-  std::filesystem::copy(dataPath / BLANK_ESM, dlcDataPath / dlcPluginName);
+  std::filesystem::copy(getSourcePluginsPath() / BLANK_ESM,
+                        dlcDataPath / dlcPluginName);
 
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
@@ -1073,6 +1152,8 @@ TEST_P(
 }
 #else
 TEST_P(GameTest, loadAllInstalledPluginsShouldLoadPluginsThatAreSymlinks) {
+  copyPlugin(BLANK_ESM);
+
   const auto symlinkPluginName = "Blank.symlink.esm";
   std::filesystem::create_symlink(dataPath / BLANK_ESM,
                                   dataPath / symlinkPluginName);
@@ -1085,6 +1166,45 @@ TEST_P(GameTest, loadAllInstalledPluginsShouldLoadPluginsThatAreSymlinks) {
   EXPECT_NE(nullptr, plugin);
 }
 #endif
+
+TEST_P(
+    GameTest,
+    loadAllInstalledPluginsShouldNotDuplicateReplaceExistingRemovedPluginWarnings) {
+  createMorrowindIni();
+
+  Game game = createInitialisedGame();
+
+  const auto pluginName = "invalid.esm";
+  copyPlugin(BLANK_ESM, pluginName);
+
+  std::ofstream out(dataPath / pluginName, std::ios_base::app);
+  out << "Not a valid plugin";
+  out.close();
+
+  game.loadAllInstalledPlugins(false);
+
+  auto messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::removedPluginsCheck, messages[0].source);
+  EXPECT_EQ(
+      "LOOT has detected that \\\"invalid\\.esm\\\" is invalid and is now "
+      "ignoring it\\.",
+      messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+
+  std::filesystem::rename(dataPath / pluginName, dataPath / "invalid.esp");
+
+  game.loadAllInstalledPlugins(false);
+
+  messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::removedPluginsCheck, messages[0].source);
+  EXPECT_EQ(
+      "LOOT has detected that \\\"invalid\\.esp\\\" is invalid and is now "
+      "ignoring it\\.",
+      messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+}
 
 TEST_P(GameTest, pluginsShouldNotBeFullyLoadedByDefault) {
   Game game = createInitialisedGame();
@@ -1133,6 +1253,8 @@ TEST_P(GameTest,
 
 TEST_P(GameTest,
        GetActiveLoadOrderIndexShouldReturnNulloptForAPluginThatIsNotActive) {
+  copyPlugin(BLANK_ESP);
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -1144,12 +1266,21 @@ TEST_P(GameTest,
 TEST_P(
     GameTest,
     GetActiveLoadOrderIndexShouldReturnTheLoadOrderIndexOmittingInactivePlugins) {
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_DIFFERENT_ESM);
+  copyPlugin(BLANK_MASTER_DEPENDENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_MASTER_DEPENDENT_ESP);
+  setLoadOrder({{BLANK_DIFFERENT_ESM, true},
+                {BLANK_ESM, true},
+                {BLANK_MASTER_DEPENDENT_ESM, false},
+                {BLANK_DIFFERENT_MASTER_DEPENDENT_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
-  auto index = game.getActiveLoadOrderIndex(*game.getPlugin(masterFile),
-                                            game.getLoadOrder());
-  EXPECT_EQ(0, index);
+  auto index = game.getActiveLoadOrderIndex(
+      *game.getPlugin(BLANK_MASTER_DEPENDENT_ESM), game.getLoadOrder());
+  EXPECT_FALSE(index.has_value());
 
   index = game.getActiveLoadOrderIndex(*game.getPlugin(BLANK_ESM),
                                        game.getLoadOrder());
@@ -1164,6 +1295,9 @@ TEST_P(
 TEST_P(
     GameTest,
     GetActiveLoadOrderIndexShouldCaseInsensitivelyCompareNonAsciiPluginNamesCorrectly) {
+  copyPlugin(BLANK_ESP, NON_ASCII_ESP);
+  setLoadOrder({{NON_ASCII_ESP, true}});
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
@@ -1173,12 +1307,25 @@ TEST_P(
 }
 
 TEST_P(GameTest, setLoadOrderWithoutLoadedPluginsShouldIgnoreCurrentState) {
-  using std::filesystem::u8path;
+  const std::vector<std::pair<std::string, bool>> initialLoadOrder{
+      {BLANK_ESM, true},
+      {BLANK_DIFFERENT_ESM, false},
+      {BLANK_ESP, true},
+      {BLANK_DIFFERENT_ESP, false},
+  };
+
+  for (const auto& [plugin, isActive] : initialLoadOrder) {
+    copyPlugin(plugin);
+  }
+
+  setLoadOrder(initialLoadOrder);
+
   Game game = createInitialisedGame();
 
   ASSERT_TRUE(findLoadOrderBackups(game).empty());
 
-  ASSERT_NO_THROW(game.setLoadOrder(loadOrderToSet_));
+  ASSERT_NO_THROW(game.setLoadOrder(
+      {BLANK_DIFFERENT_ESM, BLANK_ESM, BLANK_DIFFERENT_ESP, BLANK_ESP}));
 
   const auto paths = findLoadOrderBackups(game);
   ASSERT_EQ(1, paths.size());
@@ -1189,27 +1336,45 @@ TEST_P(GameTest, setLoadOrderWithoutLoadedPluginsShouldIgnoreCurrentState) {
 }
 
 TEST_P(GameTest, setLoadOrderShouldCreateABackupOfTheCurrentLoadOrder) {
-  using std::filesystem::u8path;
+  const std::vector<std::pair<std::string, bool>> initialLoadOrder{
+      {BLANK_ESM, true},
+      {BLANK_DIFFERENT_ESM, false},
+      {BLANK_ESP, true},
+      {BLANK_DIFFERENT_ESP, false},
+  };
+
+  for (const auto& [plugin, isActive] : initialLoadOrder) {
+    copyPlugin(plugin);
+  }
+
+  setLoadOrder(initialLoadOrder);
+
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
   ASSERT_TRUE(findLoadOrderBackups(game).empty());
 
-  const auto initialLoadOrder = game.getLoadOrder();
-  ASSERT_NO_THROW(game.setLoadOrder(loadOrderToSet_));
+  const auto initialLoadOrderFromGame = game.getLoadOrder();
+  ASSERT_NO_THROW(game.setLoadOrder(
+      {BLANK_DIFFERENT_ESM, BLANK_ESM, BLANK_DIFFERENT_ESP, BLANK_ESP}));
 
   const auto paths = findLoadOrderBackups(game);
   ASSERT_EQ(1, paths.size());
 
   const auto loadOrder = readBackedUpLoadOrder(paths[0]);
 
-  EXPECT_EQ(initialLoadOrder, loadOrder);
+  EXPECT_EQ(initialLoadOrderFromGame, loadOrder);
 }
 
 TEST_P(GameTest, setLoadOrderShouldKeepTheTenNewestBackups) {
-  using std::filesystem::u8path;
-
   constexpr auto SLEEP_DURATION = std::chrono::milliseconds(1);
+
+  const std::vector<std::string> loadOrderToSet{
+      BLANK_DIFFERENT_ESM, BLANK_ESM, BLANK_DIFFERENT_ESP, BLANK_ESP};
+
+  for (const auto& plugin : loadOrderToSet) {
+    copyPlugin(plugin);
+  }
 
   Game game = createInitialisedGame();
 
@@ -1217,7 +1382,7 @@ TEST_P(GameTest, setLoadOrderShouldKeepTheTenNewestBackups) {
   ASSERT_TRUE(backupPaths.empty());
 
   for (size_t i = 0; i < 10; i += 1) {
-    ASSERT_NO_THROW(game.setLoadOrder(loadOrderToSet_));
+    ASSERT_NO_THROW(game.setLoadOrder(loadOrderToSet));
 
     const auto newBackupPaths = findLoadOrderBackups(game);
     EXPECT_EQ(backupPaths,
@@ -1231,7 +1396,7 @@ TEST_P(GameTest, setLoadOrderShouldKeepTheTenNewestBackups) {
     std::this_thread::sleep_for(SLEEP_DURATION);
   }
 
-  ASSERT_NO_THROW(game.setLoadOrder(loadOrderToSet_));
+  ASSERT_NO_THROW(game.setLoadOrder(loadOrderToSet));
   const auto newBackupPaths = findLoadOrderBackups(game);
   EXPECT_EQ(std::vector<std::filesystem::path>(backupPaths.begin() + 1,
                                                backupPaths.end()),
@@ -1259,27 +1424,169 @@ TEST_P(GameTest, sortPluginsShouldSupportPluginsAtExternalPaths) {
   const auto dlcDataPath = gamePath.parent_path().parent_path() /
                            "Fallout 4- Far Harbor (PC)" / "Content" / "Data";
   std::filesystem::create_directories(dlcDataPath);
-  std::filesystem::copy(dataPath / BLANK_ESM, dlcDataPath / dlcPluginName);
+  std::filesystem::copy(getSourcePluginsPath() / BLANK_ESM,
+                        dlcDataPath / dlcPluginName);
+
+  std::vector<std::string> expectedLoadOrder{
+      dlcPluginName,
+      BLANK_ESM,
+      BLANK_DIFFERENT_ESM,
+      BLANK_MASTER_DEPENDENT_ESM,
+      BLANK_DIFFERENT_MASTER_DEPENDENT_ESM,
+      BLANK_ESP,
+      BLANK_DIFFERENT_ESP,
+      BLANK_MASTER_DEPENDENT_ESP,
+      BLANK_DIFFERENT_MASTER_DEPENDENT_ESP,
+      BLANK_PLUGIN_DEPENDENT_ESP,
+      BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP,
+      NON_ASCII_ESP};
+
+  for (const auto& pluginName : expectedLoadOrder) {
+    if (pluginName == dlcPluginName) {
+      continue;
+    } else if (pluginName == NON_ASCII_ESP) {
+      copyPlugin(BLANK_ESP, NON_ASCII_ESP);
+    } else {
+      copyPlugin(pluginName);
+    }
+  }
+
+  setLoadOrder({
+      {BLANK_ESM, true},
+      {BLANK_DIFFERENT_ESM, false},
+      {BLANK_MASTER_DEPENDENT_ESM, false},
+      {BLANK_DIFFERENT_MASTER_DEPENDENT_ESM, false},
+      {BLANK_ESP, false},
+      {BLANK_DIFFERENT_ESP, false},
+      {BLANK_MASTER_DEPENDENT_ESP, false},
+      {BLANK_DIFFERENT_MASTER_DEPENDENT_ESP, true},
+      {BLANK_PLUGIN_DEPENDENT_ESP, false},
+      {BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP, false},
+      {NON_ASCII_ESP, true},
+  });
 
   Game game = createInitialisedGame();
   game.loadAllInstalledPlugins(true);
 
   const auto loadOrder = game.sortPlugins();
 
-  EXPECT_EQ(std::vector<std::string>({masterFile,
-                                      dlcPluginName,
-                                      BLANK_ESM,
-                                      BLANK_DIFFERENT_ESM,
-                                      BLANK_MASTER_DEPENDENT_ESM,
-                                      BLANK_DIFFERENT_MASTER_DEPENDENT_ESM,
-                                      BLANK_ESP,
-                                      BLANK_DIFFERENT_ESP,
-                                      BLANK_MASTER_DEPENDENT_ESP,
-                                      BLANK_DIFFERENT_MASTER_DEPENDENT_ESP,
-                                      BLANK_PLUGIN_DEPENDENT_ESP,
-                                      BLANK_DIFFERENT_PLUGIN_DEPENDENT_ESP,
-                                      NON_ASCII_ESP}),
-            loadOrder);
+  EXPECT_EQ(std::vector<std::string>(expectedLoadOrder), loadOrder);
+}
+
+TEST_P(GameTest,
+       sortPluginsShouldReplaceExistingCyclicInteractionErrorMessages) {
+  createMorrowindIni();
+  copyPlugin(BLANK_ESM);
+  copyPlugin(BLANK_MASTER_DEPENDENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_MASTER_DEPENDENT_ESM);
+
+  Game game = createInitialisedGame();
+  game.loadAllInstalledPlugins(true);
+
+  PluginMetadata metadata(BLANK_ESM);
+  metadata.SetLoadAfterFiles({File(BLANK_MASTER_DEPENDENT_ESM)});
+  game.addUserMetadata(metadata);
+
+  game.sortPlugins();
+
+  auto messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::cyclicInteraction, messages[0].source);
+  EXPECT_EQ(
+      "Cyclic interaction detected between \"Blank \\- Master "
+      "Dependent\\.esm\" and \"Blank\\.esm\": \n\nBlank - Master "
+      "Dependent.esm\\\n&emsp;[User Load "
+      "After]\\\nBlank.esm\\\n&emsp;[Master]\\\nBlank - Master Dependent.esm",
+      messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+
+  game.clearUserMetadata(BLANK_ESM);
+  metadata = PluginMetadata(BLANK_DIFFERENT_ESM);
+  metadata.SetLoadAfterFiles({File(BLANK_DIFFERENT_MASTER_DEPENDENT_ESM)});
+  game.addUserMetadata(metadata);
+
+  game.sortPlugins();
+
+  messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::cyclicInteraction, messages[0].source);
+  EXPECT_EQ(
+      "Cyclic interaction detected between \"Blank \\- Different Master "
+      "Dependent\\.esm\" and \"Blank \\- Different\\.esm\": \n\nBlank - "
+      "Different Master Dependent.esm\\\n&emsp;[User Load After]\\\nBlank - "
+      "Different.esm\\\n&emsp;[Master]\\\nBlank - Different Master "
+      "Dependent.esm",
+      messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+}
+
+TEST_P(GameTest, sortPluginsShouldReplaceExistingUndefinedGroupErrorMessages) {
+  createMorrowindIni();
+
+  Game game = createInitialisedGame();
+  game.loadAllInstalledPlugins(true);
+
+  game.setUserGroups({Group("B", {"A"})});
+
+  game.sortPlugins();
+
+  auto messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::missingGroup, messages[0].source);
+  EXPECT_EQ("The group \\\"A\\\" does not exist\\.", messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+
+  game.setUserGroups({Group("D", {"C"})});
+
+  game.sortPlugins();
+
+  messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::missingGroup, messages[0].source);
+  EXPECT_EQ("The group \\\"C\\\" does not exist\\.", messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+}
+
+TEST_P(GameTest, sortPluginsShouldReplaceExistingMissingPluginErrorMessages) {
+  if (GetParam() != GameId::tes3) {
+    return;
+  }
+
+  createMorrowindIni();
+
+  const auto blankEsmBak = "Blank.esm.bak";
+
+  copyPlugin(BLANK_ESM, blankEsmBak);
+  copyPlugin(BLANK_MASTER_DEPENDENT_ESM);
+  copyPlugin(BLANK_DIFFERENT_MASTER_DEPENDENT_ESM);
+
+  Game game = createInitialisedGame();
+
+  game.loadAllInstalledPlugins(true);
+  game.sortPlugins();
+
+  const auto expectedText =
+      "Sorting failed because there is at least one installed plugin that "
+      "depends on at least one plugin that is not installed\\.";
+
+  auto messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::missingMaster, messages[0].source);
+  EXPECT_EQ(expectedText, messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+
+  std::filesystem::rename(dataPath / blankEsmBak, dataPath / BLANK_ESM);
+  copyPlugin(BLANK_DIFFERENT_ESM, blankEsmBak);
+
+  game.loadAllInstalledPlugins(true);
+  game.sortPlugins();
+
+  messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::missingMaster, messages[0].source);
+  EXPECT_EQ(expectedText, messages[0].text);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
 }
 
 TEST_P(GameTest,
@@ -1378,23 +1685,183 @@ TEST_P(GameTest, appendingMessagesShouldStoreThemInTheGivenOrder) {
   EXPECT_EQ(messages[1], gameMessages[1]);
 }
 
-TEST_P(GameTest, clearingMessagesShouldRemoveAllAppendedMessages) {
+TEST_P(GameTest, loadMetadataShouldLoadMasterlistAndUserMetadata) {
   Game game = createInitialisedGame();
-  std::vector<SourcedMessage> messages({
-      SourcedMessage{MessageType::say, MessageSource::messageMetadata, "1"},
-      SourcedMessage{MessageType::error, MessageSource::messageMetadata, "2"},
-  });
-  for (const auto& message : messages) {
-    game.appendMessage(message);
-  }
 
-  const auto previousSize =
-      game.getMessages(MessageContent::DEFAULT_LANGUAGE, false).size();
+  using std::endl;
+  std::ofstream out(game.getMasterlistPath());
+  out << "groups:" << endl << "- name: A" << endl;
+  out.close();
 
-  game.clearMessages();
+  out.open(game.getUserlistPath());
+  out << "plugins:" << endl
+      << "- name: Blank.esp" << endl
+      << "  group: A" << endl;
+  out.close();
 
-  EXPECT_EQ(previousSize - messages.size(),
-            game.getMessages(MessageContent::DEFAULT_LANGUAGE, false).size());
+  game.loadMetadata();
+
+  std::vector<Group> expectedMasterlistGroups{
+      Group("default"),
+      Group("A"),
+  };
+
+  std::vector<Group> expectedUserGroups{Group("default")};
+
+  EXPECT_EQ(expectedMasterlistGroups, game.getMasterlistGroups());
+  EXPECT_FALSE(game.getMasterlistMetadata("Blank.esp").has_value());
+  EXPECT_EQ(expectedUserGroups, game.getUserGroups());
+  EXPECT_EQ("A", game.getUserMetadata("Blank.esp").value().GetGroup().value());
+}
+
+TEST_P(GameTest,
+       loadMetadataShouldRecoverRemovedMasterlistGroupsAsUserMetadata) {
+  createMorrowindIni();
+  copyPlugin(BLANK_ESP);
+
+  Game game = createInitialisedGame();
+
+  game.loadAllInstalledPlugins(true);
+
+  using std::endl;
+  std::ofstream out(game.getMasterlistPath());
+  out << "groups:" << endl
+      << "- name: A" << endl  // Unreferenced
+      << "- name: B" << endl  // Referenced by plugin
+      << "- name: C" << endl  // Extended in user metadata, and referenced in
+                              // masterlist and user 'after' metadata
+      << "- name: D" << endl  // Unreferenced, but references groups also
+                              // referenced by user 'after' metadata
+      << "  after: [B, C, default]" << endl
+      << "- name: E" << endl  // Extended in user metadata
+      << "  after: [default]" << endl
+      << "- name: F" << endl  // Referenced by user 'after' metadata
+      << "- name: H" << endl  // Referenced by masterlist 'after' metadata
+      << "- name: I" << endl  // Referenced by masterlist 'after' metadata
+      << "- name: J" << endl  // Referenced by user 'after' metadata
+      << "  after: [H, I]" << endl;
+  out.close();
+
+  out.open(game.getUserlistPath());
+  out << "groups:" << endl
+      << "- name: C" << endl
+      << "- name: E" << endl
+      << "  after: [C]" << endl
+      << "- name: G" << endl
+      << "  after: [F]" << endl
+      << "- name: K" << endl
+      << "  after: [J]" << endl
+      << "plugins:" << endl
+      << "- name: " << BLANK_ESP << endl
+      << "  group: B" << endl;
+  out.close();
+
+  game.loadMetadata();
+
+  out.open(game.getMasterlistPath());
+  out << "groups: []" << endl;
+  out.close();
+
+  game.loadMetadata();
+
+  std::vector<Group> expectedMasterlistGroups{Group("default")};
+  std::vector<Group> expectedUserGroups{
+      Group("default"),
+      Group("C"),
+      Group("E", {"default", "C"}),
+      Group("G", {"F (Recovered)"}),
+      Group("K", {"J (Recovered)"}),
+      Group("B (Recovered)"),
+      Group("D (Recovered)", {"B (Recovered)", "C", "default"}),
+      Group("F (Recovered)"),
+      Group("H (Recovered)"),
+      Group("I (Recovered)"),
+      Group("J (Recovered)", {"H (Recovered)", "I (Recovered)"}),
+  };
+
+  EXPECT_EQ(expectedMasterlistGroups, game.getMasterlistGroups());
+  EXPECT_FALSE(game.getMasterlistMetadata(BLANK_ESP).has_value());
+  EXPECT_EQ(expectedUserGroups, game.getUserGroups());
+  EXPECT_EQ("B (Recovered)",
+            game.getUserMetadata(BLANK_ESP).value().GetGroup().value());
+
+  std::vector<SourcedMessage> expectedMessages{
+      recoveredGroupMessage("B"),
+      recoveredGroupMessage("D"),
+      recoveredGroupMessage("F"),
+      recoveredGroupMessage("H"),
+      recoveredGroupMessage("I"),
+      recoveredGroupMessage("J"),
+      SourcedMessage{
+          MessageType::warn,
+          MessageSource::recoveredGroupDetected,
+          translate(
+              "One or more groups with names that end with \" "
+              "(Recovered)\" were found in your group assignments. Please "
+              "check your setup, and either reassign affected plugins to "
+              "masterlist groups, or rename the user groups to not include "
+              "the \"(Recovered)\" suffix in their names.")},
+      SourcedMessage{MessageType::warn,
+                     MessageSource::unsortedLoadOrderCheck,
+                     "You have not sorted your load order this session\\."}};
+
+  EXPECT_EQ(expectedMessages, game.getMessages("en", false));
+}
+
+TEST_P(GameTest, loadMetadataCannotUpdateUserMetadataForNonLoadedPlugins) {
+  Game game = createInitialisedGame();
+
+  using std::endl;
+  std::ofstream out(game.getMasterlistPath());
+  out << "groups:" << endl << "- name: A" << endl;
+  out.close();
+
+  out.open(game.getUserlistPath());
+  out << "plugins:" << endl
+      << "- name: " << BLANK_ESP << endl
+      << "  group: A" << endl;
+  out.close();
+
+  game.loadMetadata();
+
+  out.open(game.getMasterlistPath());
+  out << "groups: []" << endl;
+  out.close();
+
+  game.loadMetadata();
+
+  std::vector<Group> expectedGroups{Group("default")};
+
+  EXPECT_EQ(expectedGroups, game.getMasterlistGroups());
+  EXPECT_FALSE(game.getMasterlistMetadata(BLANK_ESP).has_value());
+  EXPECT_EQ(expectedGroups, game.getUserGroups());
+
+  EXPECT_EQ("A", game.getUserMetadata(BLANK_ESP).value().GetGroup().value());
+}
+
+TEST_P(GameTest,
+       loadMetadataShouldReplaceExistingMetadataParsingErrorMessages) {
+  Game game = createInitialisedGame();
+
+  std::ofstream out(game.getMasterlistPath());
+  out << "Not a valid metadata file";
+  out.close();
+
+  game.loadMetadata();
+
+  auto messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::parsingMetadataFailed, messages[0].source);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
+
+  std::filesystem::rename(game.getMasterlistPath(), game.getUserlistPath());
+
+  game.loadMetadata();
+
+  messages = game.getMessages("en", false);
+  ASSERT_EQ(2, messages.size());
+  EXPECT_EQ(MessageSource::parsingMetadataFailed, messages[0].source);
+  EXPECT_EQ(MessageSource::unsortedLoadOrderCheck, messages[1].source);
 }
 }
 

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -34,8 +32,9 @@ namespace loot {
 class ComboBoxDelegate : public QStyledItemDelegate {
   Q_OBJECT
 public:
-  ComboBoxDelegate(QObject* parent,
-                   const std::vector<std::pair<QString, QVariant>>& textAndData);
+  ComboBoxDelegate(
+      QObject* parent,
+      const std::vector<std::pair<QString, QVariant>>& textAndData);
 
   QWidget* createEditor(QWidget* parent,
                         const QStyleOptionViewItem& option,

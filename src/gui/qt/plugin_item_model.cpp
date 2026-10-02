@@ -1,10 +1,9 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2022 sibir-ine
 
     This file is part of LOOT.
 
@@ -66,6 +65,10 @@ bool shouldFilterMessage(
         hiddenMessagesByPluginName,
     const std::unordered_map<std::string, std::unordered_set<std::string>>&
         oldMessagesByPluginName) {
+  if (filters.hideAllPluginMessages) {
+    return true;
+  }
+
   if (message.type == loot::MessageType::say && filters.hideNotes) {
     return true;
   }
@@ -92,7 +95,7 @@ bool shouldFilterMessage(
 }
 
 void filterMessages(std::vector<SourcedMessage>& messages,
-                    std::function<bool(SourcedMessage&)> filter) {
+                    std::function<bool(const SourcedMessage&)> filter) {
   auto it = std::remove_if(messages.begin(), messages.end(), filter);
   messages.erase(it, messages.end());
 }
@@ -522,12 +525,14 @@ void PluginItemModel::setPluginItems(std::vector<PluginItem>&& newItems) {
     endRemoveRows();
   }
 
-  beginInsertRows(QModelIndex(), 1, static_cast<int>(newItems.size()));
+  if (!newItems.empty()) {
+    beginInsertRows(QModelIndex(), 1, static_cast<int>(newItems.size()));
 
-  std::swap(items, newItems);
-  searchResults.resize(items.size(), false);
+    std::swap(items, newItems);
+    searchResults.resize(items.size(), false);
 
-  endInsertRows();
+    endInsertRows();
+  }
 }
 
 void PluginItemModel::setEditorPluginName(

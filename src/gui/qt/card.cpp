@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2025    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -21,11 +19,12 @@
     You should have received a copy of the GNU General Public License
     along with LOOT.  If not, see
     <https://www.gnu.org/licenses/>.
-*/
+    */
 
 #include "gui/qt/card.h"
 
 #include <QtGui/QPainter>
+
 #include "gui/qt/icon_factory.h"
 
 namespace {

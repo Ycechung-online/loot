@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -39,33 +37,33 @@ namespace loot {
 class GeneralTab : public QFrame {
   Q_OBJECT
 public:
-  explicit GeneralTab(QWidget *parent = nullptr);
+  explicit GeneralTab(QWidget* parent = nullptr);
 
-  void initialiseInputs(const LootSettings &settings,
-                        const std::vector<std::string> &themes);
-  void recordInputValues(LootSettings &settings);
+  void initialiseInputs(const LootSettings& settings,
+                        const std::vector<std::string>& themes);
+  void recordInputValues(LootSettings& settings);
   bool areInputValuesValid() const;
 
 private:
-  QLabel *defaultGameLabel{new QLabel(this)};
-  QLabel *languageLabel{new QLabel(this)};
-  QLabel *themeLabel{new QLabel(this)};
-  QLabel *updateMasterlistLabel{new QLabel(this)};
-  QLabel *checkUpdatesLabel{new QLabel(this)};
-  QLabel *loggingLabel{new QLabel(this)};
-  QLabel *useNoSortingChangesDialogLabel{new QLabel(this)};
-  QLabel *warnOnCaseSensitiveGamePathsLabel{new QLabel(this)};
-  QLabel *preludeSourceLabel{new QLabel(this)};
-  QComboBox *defaultGameComboBox{new QComboBox(this)};
-  QComboBox *languageComboBox{new QComboBox(this)};
-  QComboBox *themeComboBox{new QComboBox(this)};
-  QCheckBox *updateMasterlistCheckbox{new QCheckBox(this)};
-  QCheckBox *checkUpdatesCheckbox{new QCheckBox(this)};
-  QCheckBox *loggingCheckbox{new QCheckBox(this)};
-  QCheckBox *useNoSortingChangesDialogCheckbox{new QCheckBox(this)};
-  QCheckBox *warnOnCaseSensitiveGamePathsCheckbox{new QCheckBox(this)};
-  QLineEdit *preludeSourceInput{new QLineEdit(this)};
-  QLabel *descriptionLabel{new QLabel(this)};
+  QLabel* defaultGameLabel{new QLabel(this)};
+  QLabel* languageLabel{new QLabel(this)};
+  QLabel* themeLabel{new QLabel(this)};
+  QLabel* updateMasterlistLabel{new QLabel(this)};
+  QLabel* checkUpdatesLabel{new QLabel(this)};
+  QLabel* loggingLabel{new QLabel(this)};
+  QLabel* useNoSortingChangesDialogLabel{new QLabel(this)};
+  QLabel* warnOnCaseSensitiveGamePathsLabel{new QLabel(this)};
+  QLabel* preludeSourceLabel{new QLabel(this)};
+  QComboBox* defaultGameComboBox{new QComboBox(this)};
+  QComboBox* languageComboBox{new QComboBox(this)};
+  QComboBox* themeComboBox{new QComboBox(this)};
+  QCheckBox* updateMasterlistCheckbox{new QCheckBox(this)};
+  QCheckBox* checkUpdatesCheckbox{new QCheckBox(this)};
+  QCheckBox* loggingCheckbox{new QCheckBox(this)};
+  QCheckBox* useNoSortingChangesDialogCheckbox{new QCheckBox(this)};
+  QCheckBox* warnOnCaseSensitiveGamePathsCheckbox{new QCheckBox(this)};
+  QLineEdit* preludeSourceInput{new QLineEdit(this)};
+  QLabel* descriptionLabel{new QLabel(this)};
 
   void setupUi();
   void translateUi();

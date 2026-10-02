@@ -1,10 +1,11 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2016 Frederik “Freso” S. Olesen
+    Copyright (C) 2022 sibir
+    Copyright (C) 2023 Hleb Valoshka
 
     This file is part of LOOT.
 
@@ -170,7 +171,8 @@ int calculateSidebarPositionSectionWidth(size_t pluginCount) {
   const auto paddingWidth =
       QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
 
-  const int numberOfDigits = static_cast<int>(log10(static_cast<double>(pluginCount))) + 1;
+  const int numberOfDigits =
+      static_cast<int>(log10(static_cast<double>(pluginCount))) + 1;
 
   return numberOfDigits * static_cast<int>(maxCharWidth) + paddingWidth;
 }
@@ -263,27 +265,123 @@ void setWindowPosition(QWidget& window,
     window.setGeometry(geometry);
   }
 }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+void logColorScheme() {
+  const auto logger = loot::getLogger();
+  if (logger) {
+    const auto colorScheme = QGuiApplication::styleHints()->colorScheme();
+    std::string description;
+    if (colorScheme == Qt::ColorScheme::Unknown) {
+      description = "unknown";
+    } else if (colorScheme == Qt::ColorScheme::Light) {
+      description = "light";
+    } else if (colorScheme == Qt::ColorScheme::Dark) {
+      description = "dark";
+    } else {
+      description = std::to_string(static_cast<int>(colorScheme));
+    }
+    logger->info("The system color scheme is {}", description);
+
+    if (isColorSchemeDark()) {
+      logger->debug("The detected color scheme is dark");
+    } else {
+      logger->debug("The detected color scheme is light");
+    }
+  }
+}
+#endif
+
+std::optional<std::string> getStyleSuffixForTheme(
+    const std::string& themeName,
+    std::string_view initialQtStyleName) {
+#ifdef _WIN32
+  if (initialQtStyleName == "fusion" &&
+      !boost::ends_with(themeName, "-fusion-windows")) {
+    return "-fusion-windows";
+  } else if (initialQtStyleName == "windows11" &&
+             !boost::ends_with(themeName, "-windows11")) {
+    return "-windows11";
+  }
+#endif
+
+  return std::nullopt;
+}
+
+std::vector<std::string> selectThemesToTry(
+    const std::string& themeName,
+    std::string_view initialQtStyleName) {
+  const auto logger = loot::getLogger();
+
+  std::vector<std::string> variants;
+
+  const auto styleSuffix =
+      getStyleSuffixForTheme(themeName, initialQtStyleName);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  const auto colorScheme = isColorSchemeDark() ? "dark" : "light";
+  const auto colorSchemeSuffix = fmt::format("-{}", colorScheme);
+
+  if (logger) {
+    logger->debug("The detected color scheme is {}", colorScheme);
+  }
+
+  if (!boost::ends_with(themeName, colorSchemeSuffix)) {
+    if (styleSuffix.has_value()) {
+      variants.push_back(themeName + colorSchemeSuffix + styleSuffix.value());
+    }
+    variants.push_back(themeName + colorSchemeSuffix);
+  }
+#endif
+
+  if (styleSuffix.has_value()) {
+    variants.push_back(themeName + styleSuffix.value());
+  }
+
+  variants.push_back(themeName);
+
+  // Fall back to the default light theme.
+  variants.push_back("default-light");
+
+  return variants;
+}
+
+void setDialogPosition(
+    QDialog& dialog,
+    const std::optional<LootSettings::WindowPosition>& windowPosition) {
+  if (windowPosition.has_value()) {
+    setWindowPosition(dialog, windowPosition.value());
+
+    if (windowPosition.value().maximised) {
+      dialog.setWindowState(dialog.windowState() | Qt::WindowMaximized);
+    }
+  }
+}
+
+void addActionButton(QToolBar* toolbar, QAction* action) {
+  auto button = new QToolButton(toolbar);
+  button->setDefaultAction(action);
+  button->setToolButtonStyle(Qt::ToolButtonStyle::ToolButtonTextBesideIcon);
+  button->setVisible(action->isVisible());
+
+  auto toolbarAction = toolbar->addWidget(button);
+
+  toolbar->connect(action, &QAction::visibleChanged, [=]() {
+    toolbarAction->setVisible(action->isVisible());
+  });
+}
 }
 
 namespace loot {
 MainWindow::MainWindow(LootState& state, QWidget* parent) :
-    QMainWindow(parent), state(&state) {
+    QMainWindow(parent),
+    state(&state),
+    initialQtStyleName(QApplication::style()->name().toStdString()) {
   qRegisterMetaType<QueryResult>("QueryResult");
   qRegisterMetaType<std::string>("std::string");
 
   setupUi();
   refreshGamesDropdown();
-
-  qApp->connect(qApp,
-                &QGuiApplication::applicationStateChanged,
-                this,
-                [this](Qt::ApplicationState) {
-                  const auto cardDelegate = qobject_cast<CardDelegate*>(
-                      this->pluginCardsView->itemDelegate());
-                  if (cardDelegate != nullptr) {
-                    cardDelegate->refreshStyling();
-                  }
-                });
 }
 
 void MainWindow::initialise() {
@@ -352,33 +450,12 @@ void MainWindow::applyTheme() {
 
   const auto logger = getLogger();
   if (logger) {
-    logger->debug("The current style name is {}",
-                  qApp->style()->name().toStdString());
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-    const auto colorScheme = QGuiApplication::styleHints()->colorScheme();
-    std::string description;
-    if (colorScheme == Qt::ColorScheme::Unknown) {
-      description = "unknown";
-    } else if (colorScheme == Qt::ColorScheme::Light) {
-      description = "light";
-    } else if (colorScheme == Qt::ColorScheme::Dark) {
-      description = "dark";
-    } else {
-      description = std::to_string(static_cast<int>(colorScheme));
-    }
-    logger->info("The system color scheme is {}", description);
-
-    if (isColorSchemeDark()) {
-      logger->debug("The detected color scheme is dark");
-    } else {
-      logger->debug("The detected color scheme is light");
-    }
-#endif
+    logger->debug("The initial Qt style name was {}", initialQtStyleName);
   }
 
-  std::optional<QString> styleSheet;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  logColorScheme();
+
   if (boost::ends_with(theme, "-dark")) {
     if (logger) {
       logger->debug("Setting color scheme to dark");
@@ -391,47 +468,53 @@ void MainWindow::applyTheme() {
     }
 
     QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme::Light);
-  }
-
-  if (isColorSchemeDark()) {
-    if (logger) {
-      logger->debug("The detected color scheme is dark");
-    }
-    if (!boost::ends_with(theme, "-dark")) {
-      styleSheet = loot::loadStyleSheet(themesPath, theme + "-dark");
-    }
   } else {
     if (logger) {
-      logger->debug("The detected color scheme is light");
+      logger->debug("Reverting to the system's color scheme");
     }
-    if (!boost::ends_with(theme, "-light")) {
-      styleSheet = loot::loadStyleSheet(themesPath, theme + "-light");
-    }
+
+    QGuiApplication::styleHints()->unsetColorScheme();
   }
 #endif
 
-  if (!styleSheet.has_value()) {
-    styleSheet = loot::loadStyleSheet(themesPath, theme);
-  }
+  std::optional<QString> styleSheet;
+  const auto themesToTry = selectThemesToTry(theme, initialQtStyleName);
+  for (const auto& themeToTry : themesToTry) {
+    styleSheet = loot::loadStyleSheet(themesPath, themeToTry);
 
-  if (!styleSheet.has_value()) {
-    // Fall back to the default light theme.
-    styleSheet = loot::loadStyleSheet(themesPath, "default-light");
+    if (styleSheet.has_value()) {
+      break;
+    }
   }
 
   if (styleSheet.has_value()) {
     qApp->setStyleSheet(styleSheet.value());
 
-    qApp->style()->polish(qApp);
+    // When the mouse hovers over a card, a persistent "editor" is opened for
+    // that card to support interactive elements like clickable links and icon
+    // tooltips. The editor stays open until the mouse moves over a different
+    // card.
+    // The open editor doesn't get its icon and link text colors updated by the
+    // style change, and the easiest way to resolve this is to close the editor
+    // so that the non-interactive list item gets painted with the updated
+    // style. Moving the mouse will then open a new editor with the updated
+    // style.
+    if (lastEnteredCardIndex.has_value()) {
+      pluginCardsView->closePersistentEditor(lastEnteredCardIndex.value());
+      lastEnteredCardIndex.reset();
+    }
 
     const auto cardDelegate =
         qobject_cast<CardDelegate*>(pluginCardsView->itemDelegate());
-    cardDelegate->refreshStyling();
+
+    if (cardDelegate) {
+      cardDelegate->invalidateCache();
+    }
   }
 }
 
 void MainWindow::setupUi() {
-  setWindowIcon(QIcon(":/icons/loot.svg"));
+  setWindowIcon(QIcon(":/icons/loot.ico"));
 
   auto lastWindowPosition = state->getSettings().getMainWindowPosition();
   if (lastWindowPosition.has_value()) {
@@ -442,16 +525,10 @@ void MainWindow::setupUi() {
     resize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
   }
 
-  const auto groupsEditorWindowPosition =
-      state->getSettings().getGroupsEditorWindowPosition();
-  if (groupsEditorWindowPosition.has_value()) {
-    setWindowPosition(*groupsEditor, groupsEditorWindowPosition.value());
-
-    if (groupsEditorWindowPosition.value().maximised) {
-      groupsEditor->setWindowState(groupsEditor->windowState() |
-                                   Qt::WindowMaximized);
-    }
-  }
+  setDialogPosition(*groupsEditor,
+                    state->getSettings().getGroupsEditorWindowPosition());
+  setDialogPosition(*compareLoadOrdersDialog,
+                    state->getSettings().getCompareLoadOrdersWindowPosition());
 
   // Set up status bar.
   setStatusBar(statusbar);
@@ -460,7 +537,7 @@ void MainWindow::setupUi() {
   setupToolBar();
 
   settingsDialog->setObjectName("settingsDialog");
-  searchDialog->setObjectName("searchDialog");
+  searchToolBar->setObjectName("searchToolBar");
   backupDialog->setObjectName("backupDialog");
   restoreBackupDialog->setObjectName("restoreBackupDialog");
   sidebarPluginsView->setObjectName("sidebarPluginsView");
@@ -579,9 +656,6 @@ void MainWindow::setupMenuBar() {
 
   actionOpenGroupsEditor->setObjectName("actionOpenGroupsEditor");
 
-  actionSearch->setObjectName("actionSearch");
-  actionSearch->setShortcut(QKeySequence::Find);
-
   actionCopyLoadOrder->setObjectName("actionCopyLoadOrder");
 
   actionCopyContent->setObjectName("actionCopyContent");
@@ -637,8 +711,8 @@ void MainWindow::setupMenuBar() {
   menuGame->addAction(actionUpdateMasterlist);
   menuGame->addAction(actionApplySort);
   menuGame->addAction(actionDiscardSort);
+  menuGame->addAction(actionCompareLoadOrders);
   menuGame->addSeparator();
-  menuGame->addAction(actionSearch);
   menuGame->addAction(actionCopyLoadOrder);
   menuGame->addAction(actionCopyContent);
   menuGame->addAction(actionRefreshContent);
@@ -682,6 +756,9 @@ void MainWindow::setupToolBar() {
   actionDiscardSort->setObjectName("actionDiscardSort");
   actionDiscardSort->setVisible(false);
 
+  actionCompareLoadOrders->setObjectName("actionCompareLoadOrders");
+  actionCompareLoadOrders->setVisible(false);
+
   // Create toolbar.
   toolBar->setMovable(false);
   toolBar->setFloatable(false);
@@ -694,11 +771,13 @@ void MainWindow::setupToolBar() {
 
   toolBar->addWidget(gameComboBox);
 
-  toolBar->addAction(actionSort);
-  toolBar->addAction(actionUpdateMasterlist);
-  toolBar->addAction(actionApplySort);
-  toolBar->addAction(actionDiscardSort);
-  toolBar->addAction(actionSearch);
+  addActionButton(toolBar, actionSort);
+  addActionButton(toolBar, actionUpdateMasterlist);
+  addActionButton(toolBar, actionApplySort);
+  addActionButton(toolBar, actionDiscardSort);
+  addActionButton(toolBar, actionCompareLoadOrders);
+
+  addToolBar(Qt::TopToolBarArea, searchToolBar);
 }
 
 void MainWindow::setupViews() {
@@ -797,6 +876,8 @@ void MainWindow::translateUi() {
   actionApplySort->setText(qTranslate("&Apply Sorted Load Order"));
   /* translators: This string is also an action in the Game menu. */
   actionDiscardSort->setText(qTranslate("&Discard Sorted Load Order"));
+  /* translators: This string is also an action in the Game menu. */
+  actionCompareLoadOrders->setText(qTranslate("&View Load Order Changes..."));
 
   // Translate menu bar items.
   /* translators: The mnemonic in this string shouldn't conflict with other
@@ -818,8 +899,6 @@ void MainWindow::translateUi() {
   menuGame->setTitle(qTranslate("&Game"));
   /* translators: This string is an action in the Game menu. */
   actionOpenGroupsEditor->setText(qTranslate("&Edit Groups…"));
-  /* translators: This string is an action in the Game menu. */
-  actionSearch->setText(qTranslate("Searc&h Cards…"));
   /* translators: This string is an action in the Game menu. */
   actionCopyLoadOrder->setText(qTranslate("Copy &Load Order"));
   /* translators: This string is an action in the Game menu. */
@@ -891,7 +970,6 @@ void MainWindow::setIcons() {
   actionJoinDiscordServer->setIcon(IconFactory::getJoinDiscordServerIcon());
   actionAbout->setIcon(IconFactory::getAboutIcon());
   actionOpenGroupsEditor->setIcon(IconFactory::getOpenGroupsEditorIcon());
-  actionSearch->setIcon(IconFactory::getSearchIcon());
   actionCopyLoadOrder->setIcon(IconFactory::getCopyLoadOrderIcon());
   actionCopyContent->setIcon(IconFactory::getCopyContentIcon());
   actionRefreshContent->setIcon(IconFactory::getRefreshIcon());
@@ -911,13 +989,16 @@ void MainWindow::setIcons() {
   actionUpdateMasterlist->setIcon(IconFactory::getUpdateMasterlistIcon());
   actionApplySort->setIcon(IconFactory::getApplySortIcon());
   actionDiscardSort->setIcon(IconFactory::getDiscardSortIcon());
+  actionCompareLoadOrders->setIcon(IconFactory::getCompareLoadOrdersIcon());
+
+  searchToolBar->setIcons();
 }
 
 void MainWindow::enableGameActions() {
   menuGame->setEnabled(true);
   actionSort->setEnabled(true);
   actionUpdateMasterlist->setEnabled(true);
-  actionSearch->setEnabled(true);
+  searchToolBar->setEnabled(true);
 
   const auto enableRedatePlugins =
       shouldAllowRedating(state->getCurrentGame().getSettings().getId());
@@ -936,7 +1017,7 @@ void MainWindow::disableGameActions() {
   menuGame->setEnabled(false);
   actionSort->setEnabled(false);
   actionUpdateMasterlist->setEnabled(false);
-  actionSearch->setEnabled(false);
+  searchToolBar->setEnabled(false);
 
   // Also disable plugin actions because they
   // only make sense within the context of a game.
@@ -985,6 +1066,7 @@ void MainWindow::enterSortingState() {
 
   actionApplySort->setVisible(true);
   actionDiscardSort->setVisible(true);
+  actionCompareLoadOrders->setVisible(true);
 
   actionSettings->setDisabled(true);
   actionUpdateMasterlists->setDisabled(true);
@@ -998,6 +1080,7 @@ void MainWindow::exitSortingState() {
 
   actionApplySort->setVisible(false);
   actionDiscardSort->setVisible(false);
+  actionCompareLoadOrders->setVisible(false);
 
   actionSettings->setDisabled(false);
   actionUpdateMasterlists->setDisabled(false);
@@ -1147,7 +1230,7 @@ void MainWindow::setFiltersState(
 }
 
 void MainWindow::refreshSearch() {
-  on_searchDialog_textChanged(searchDialog->getSearchText());
+  on_searchToolBar_textChanged(searchToolBar->getSearchText());
 }
 
 void MainWindow::refreshPluginRawData(const std::string& pluginName) {
@@ -1303,8 +1386,8 @@ void MainWindow::showFirstRunDialog() {
   auto paragraph3 = fmt::format(
       translate(
           "LOOT is free, but if you want to show your appreciation with some "
-          "money, donations may be made to WrinklyNinja (LOOT's creator and "
-          "main developer) using {0}."),
+          "money, donations may be made to Ortham (LOOT's creator and main "
+          "developer) using {0}."),
       "<a href=\"https://www.paypal.me/OliverHamlet\">PayPal</a>");
 
   std::string text = fmt::format(textTemplate,
@@ -1379,6 +1462,9 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     const auto groupsEditorPosition = getWindowPosition(*groupsEditor);
 
     state->getSettings().storeGroupsEditorWindowPosition(groupsEditorPosition);
+
+    state->getSettings().storeCompareLoadOrdersWindowPosition(
+        getWindowPosition(*compareLoadOrdersDialog));
   } catch (const std::exception& e) {
     auto logger = getLogger();
     if (logger) {
@@ -1755,8 +1841,6 @@ void MainWindow::on_actionOpenGroupsEditor_triggered() {
     handleException(e);
   }
 }
-
-void MainWindow::on_actionSearch_triggered() { searchDialog->show(); }
 
 void MainWindow::on_actionCopyLoadOrder_triggered() {
   try {
@@ -2222,8 +2306,8 @@ void MainWindow::on_actionAbout_triggered() {
     auto paragraph3 = fmt::format(
         translate(
             "LOOT is free, but if you want to show your appreciation with "
-            "some money, donations may be made to WrinklyNinja (LOOT's "
-            "creator and main developer) using {0}."),
+            "some money, donations may be made to Ortham (LOOT's creator and "
+            "main developer) using {0}."),
         "<a href=\"https://www.paypal.me/OliverHamlet\">PayPal</a>");
 
     std::string text =
@@ -2342,6 +2426,18 @@ void MainWindow::on_actionDiscardSort_triggered() {
     // Perform ambiguous load order check because load order state was refreshed
     // at start of sorting.
     checkForAmbiguousLoadOrder();
+  } catch (const std::exception& e) {
+    handleException(e);
+  }
+}
+
+void MainWindow::on_actionCompareLoadOrders_triggered() {
+  try {
+    compareLoadOrdersDialog->setLoadOrders(
+        state->getCurrentGame().getLoadOrder(),
+        pluginItemModel->getPluginNames());
+    compareLoadOrdersDialog->open();
+
   } catch (const std::exception& e) {
     handleException(e);
   }
@@ -2637,14 +2733,15 @@ void MainWindow::on_groupsEditor_accepted() {
 
     saveGroupNodePositions(state->getCurrentGame().getGroupNodePositionsPath(),
                            groupsEditor->getNodePositions());
+
+    state->getCurrentGame().checkForRecoveredGroups();
+    updateGeneralMessages();
   } catch (const std::exception& e) {
     handleException(e);
   }
 }
 
-void MainWindow::on_searchDialog_finished() { searchDialog->reset(); }
-
-void MainWindow::on_searchDialog_textChanged(const QVariant& text) {
+void MainWindow::on_searchToolBar_textChanged(const QVariant& text) {
   const auto isEmpty =
       (text.userType() == QMetaType::QString && text.toString().isEmpty()) ||
       (text.userType() == QMetaType::QRegularExpression &&
@@ -2672,10 +2769,10 @@ void MainWindow::on_searchDialog_textChanged(const QVariant& text) {
                         flags);
 
   proxyModel->setSearchResults(results);
-  searchDialog->setSearchResults(static_cast<size_t>(results.size()));
+  searchToolBar->setSearchResults(static_cast<size_t>(results.size()));
 }
 
-void MainWindow::on_searchDialog_currentResultChanged(size_t resultIndex) {
+void MainWindow::on_searchToolBar_currentResultChanged(size_t resultIndex) {
   const auto sourceIndex = pluginItemModel->setCurrentSearchResult(resultIndex);
   const auto proxyIndex = proxyModel->mapFromSource(sourceIndex);
 
@@ -3074,13 +3171,6 @@ void MainWindow::handleLinkColorChanged() {
   auto palette = qApp->palette();
   palette.setColor(QPalette::Active, QPalette::Link, linkColor);
   qApp->setPalette(palette);
-
-  const auto cardDelegate =
-      qobject_cast<CardDelegate*>(pluginCardsView->itemDelegate());
-
-  if (cardDelegate) {
-    cardDelegate->refreshMessages();
-  }
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2023 Oliver Hamlet -->
+<!-- Copyright 2013-2026 Oliver Hamlet -->
 <component type="desktop-application">
   <id>io.github.loot.loot</id>
   <url type="homepage">https://loot.github.io</url>
@@ -57,20 +57,54 @@
 
   <screenshots>
     <screenshot type="default">
-      <image type="source" width="1420" height="843">https://raw.githubusercontent.com/loot/loot/5c35be0de7b6a64067144750ea6f3f781958c280/docs/images/main.linux.png</image>
+      <image type="source" width="995" height="694">https://raw.githubusercontent.com/loot/loot/7e500b3b7fb456ff4772dd6ff82ee8dd2a11bec2/docs/images/main.linux.png</image>
       <caption>The LOOT main window</caption>
     </screenshot>
     <screenshot>
-      <image type="source" width="1420" height="843">https://raw.githubusercontent.com/loot/loot/5c35be0de7b6a64067144750ea6f3f781958c280/docs/images/metadata_editor.linux.png</image>
-      <caption>The LOOT main window with plugin metadata open</caption>
+      <image type="source" width="995" height="694">https://raw.githubusercontent.com/loot/loot/7e500b3b7fb456ff4772dd6ff82ee8dd2a11bec2/docs/images/metadata_editor.linux.png</image>
+      <caption>The LOOT main window with plugin metadata editor open</caption>
     </screenshot>
     <screenshot>
-      <image type="source" width="1620" height="949">https://raw.githubusercontent.com/loot/loot/5c35be0de7b6a64067144750ea6f3f781958c280/docs/images/groups_editor.linux.png</image>
+      <image type="source" width="1118" height="747">https://raw.githubusercontent.com/loot/loot/7e500b3b7fb456ff4772dd6ff82ee8dd2a11bec2/docs/images/groups_editor.linux.png</image>
       <caption>The LOOT groups editor window</caption>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="0.29.2" date="2026-08-16">
+      <description>
+        <ul>
+          <li>Added a new dialog for comparing current and sorted load orders.</li>
+          <li>Added recovery of groups that are removed from the masterlist but referenced by user metadata.</li>
+          <li>The search dialog is now a toolbar in the main window.</li>
+          <li>Fixed LOOT looking for OpenMW configuration files in the wrong places.</li>
+          <li>Other fixes and improvements.</li>
+        </ul>
+      </description>
+      <url>https://loot.readthedocs.io/en/0.29.2/app/changelog.html#id1</url>
+    </release>
+    <release version="0.29.1" date="2026-04-18">
+      <description>
+        <ul>
+          <li>Added warnings for unsupported Starfield blueprint and BlueprintShips plugins.</li>
+          <li>Starfield blueprint and BlueprintShips plugins are no longer written to plugins.txt.</li>
+          <li>Fixed the Flatpak crashing for some users.</li>
+          <li>The Flatpak is now built with more debug info available.</li>
+          <li>Other fixes and improvements.</li>
+        </ul>
+      </description>
+      <url>https://loot.readthedocs.io/en/0.29.1/app/changelog.html#id1</url>
+    </release>
+    <release version="0.29.0" date="2026-04-11">
+      <description>
+        <ul>
+          <li>Added support for Starfield's v1.16.236.0 update and its Terran Armada DLC.</li>
+          <li>Fixed Starfield BlueprintShips plugin handling.</li>
+          <li>Other fixes and improvements.</li>
+        </ul>
+      </description>
+      <url>https://loot.readthedocs.io/en/0.29.0/app/changelog.html#id1</url>
+    </release>
     <release version="0.28.0" date="2025-10-11">
       <description>
         <ul>

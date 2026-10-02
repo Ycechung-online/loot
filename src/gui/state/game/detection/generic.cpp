@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -107,6 +105,9 @@ std::vector<RegistryValue> getRegistryValues(const GameId gameId) {
                             ""},
               RegistryValue{RegistryRootKey::LOCAL_MACHINE,
                             "Software\\OpenMW.org\\OpenMW 0.50.0",
+                            ""},
+              RegistryValue{RegistryRootKey::LOCAL_MACHINE,
+                            "Software\\OpenMW.org\\OpenMW 0.51.0",
                             ""}};
     default:
       throw std::logic_error("Unrecognised game ID");
@@ -248,18 +249,19 @@ std::optional<GameInstall> findGameInstallInRegistry(
   return std::nullopt;
 }
 
-std::optional<GameInstall> findGameInstallInRegistry(
+std::vector<GameInstall> findGameInstallsInRegistry(
     const loot::RegistryInterface& registry,
     const GameId gameId) {
+  std::vector<GameInstall> installs;
   for (const auto& registryValue : getRegistryValues(gameId)) {
     const auto gameInstall =
         findGameInstallInRegistry(registry, gameId, registryValue);
     if (gameInstall.has_value()) {
-      return gameInstall;
+      installs.push_back(gameInstall.value());
     }
   }
 
-  return std::nullopt;
+  return installs;
 }
 
 #ifdef _WIN32
@@ -362,9 +364,8 @@ std::vector<GameInstall> findGameInstalls(const RegistryInterface& registry,
 #endif
 
   try {
-    const auto registryInstall = findGameInstallInRegistry(registry, gameId);
-    if (registryInstall.has_value()) {
-      installs.push_back(registryInstall.value());
+    for (auto registryInstall : findGameInstallsInRegistry(registry, gameId)) {
+      installs.push_back(registryInstall);
     }
   } catch (const std::exception& e) {
     const auto logger = getLogger();
@@ -383,8 +384,9 @@ std::vector<GameInstall> findGameInstalls(const RegistryInterface& registry,
 // detect its ID and install source.
 std::optional<GameInstall> detectGameInstall(const GameSettings& settings) {
   try {
-    if (!isValidGamePath(
-            settings.getId(), settings.getMasterFilename(), settings.getGamePath())) {
+    if (!isValidGamePath(settings.getId(),
+                         settings.getMasterFilename(),
+                         settings.getGamePath())) {
       return std::nullopt;
     }
 
@@ -392,8 +394,10 @@ std::optional<GameInstall> detectGameInstall(const GameSettings& settings) {
     const auto installPath = settings.getGamePath();
 
     if (isSteamInstall(gameId, installPath)) {
-      return GameInstall{
-          gameId, InstallSource::steam, installPath, settings.getGameLocalPath()};
+      return GameInstall{gameId,
+                         InstallSource::steam,
+                         installPath,
+                         settings.getGameLocalPath()};
     }
 
     if (isGogInstall(gameId, installPath)) {
@@ -402,8 +406,10 @@ std::optional<GameInstall> detectGameInstall(const GameSettings& settings) {
     }
 
     if (isEpicInstall(gameId, installPath)) {
-      return GameInstall{
-          gameId, InstallSource::epic, installPath, settings.getGameLocalPath()};
+      return GameInstall{gameId,
+                         InstallSource::epic,
+                         installPath,
+                         settings.getGameLocalPath()};
     }
 
     if (::isMicrosoftInstall(gameId, installPath)) {
@@ -413,8 +419,10 @@ std::optional<GameInstall> detectGameInstall(const GameSettings& settings) {
                          settings.getGameLocalPath()};
     }
 
-    return GameInstall{
-        gameId, InstallSource::unknown, installPath, settings.getGameLocalPath()};
+    return GameInstall{gameId,
+                       InstallSource::unknown,
+                       installPath,
+                       settings.getGameLocalPath()};
   } catch (const std::exception& e) {
     const auto logger = getLogger();
     logger->error(

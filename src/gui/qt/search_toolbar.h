@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -23,15 +21,13 @@
     <https://www.gnu.org/licenses/>.
     */
 
-#ifndef LOOT_GUI_QT_SEARCH_DIALOG
-#define LOOT_GUI_QT_SEARCH_DIALOG
+#ifndef LOOT_GUI_QT_SEARCH_TOOLBAR
+#define LOOT_GUI_QT_SEARCH_TOOLBAR
 
-#include <QtWidgets/QCheckBox>
-#include <QtWidgets/QDialog>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
-#include <QtWidgets/QPushButton>
-#include <QtWidgets/QWidget>
+#include <QtWidgets/QToolBar>
+#include <QtWidgets/QToolButton>
 #include <optional>
 
 namespace loot {
@@ -40,26 +36,28 @@ struct SearchState {
   std::optional<size_t> currentResultIndex;
 };
 
-class SearchDialog : public QDialog {
+class SearchToolBar : public QToolBar {
   Q_OBJECT
 public:
-  explicit SearchDialog(QWidget *parent);
+  explicit SearchToolBar(QWidget* parent);
 
   QVariant getSearchText() const;
 
   void reset();
   void setSearchResults(size_t resultsCount);
 
+  void setIcons();
+
 signals:
-  void textChanged(const QVariant &text);
+  void textChanged(const QVariant& text);
   void currentResultChanged(size_t resultIndex);
 
 private:
-  QLineEdit *searchInput{new QLineEdit(this)};
-  QLabel *countLabel{new QLabel(this)};
-  QPushButton *previousButton{new QPushButton(this)};
-  QPushButton *nextButton{new QPushButton(this)};
-  QCheckBox *regexCheckbox{new QCheckBox(this)};
+  QLineEdit* searchInput{new QLineEdit(this)};
+  QLabel* countLabel{new QLabel(this)};
+  QToolButton* regexButton{new QToolButton(this)};
+  QToolButton* previousButton{new QToolButton(this)};
+  QToolButton* nextButton{new QToolButton(this)};
 
   SearchState state;
 
@@ -69,8 +67,8 @@ private:
   void updateCountLabel();
 
 private slots:
-  void on_searchInput_textChanged(const QString &text);
-  void on_regexCheckbox_stateChanged();
+  void on_searchInput_textChanged(const QString& text);
+  void on_regexButton_toggled();
   void on_previousButton_clicked();
   void on_nextButton_clicked();
 };

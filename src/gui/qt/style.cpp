@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -44,7 +42,16 @@ std::optional<QString> loadStyleSheet(const QString& resourcePath) {
     return std::nullopt;
   }
 
-  file.open(QFile::ReadOnly | QFile::Text);
+  if (!file.open(QFile::ReadOnly | QFile::Text)) {
+    const auto logger = loot::getLogger();
+    if (logger) {
+      logger->error("Failed to open stylesheet at {} due to error {}: {}",
+                    resourcePath.toStdString(),
+                    static_cast<int>(file.error()),
+                    file.errorString().toStdString());
+    }
+    return std::nullopt;
+  }
   QTextStream ts(&file);
   return ts.readAll();
 }
@@ -56,29 +63,8 @@ std::optional<QString> loadStyleSheet(const std::filesystem::path& themesPath,
   // First try loading the theme from the filesystem, then try loading from
   // built-in resources, then fall back to the default theme (which itself
   // will load from filesystem then built-in resources).
-
-#ifdef _WIN32
-  if (QApplication::style()->name() == "fusion") {
-    // Try loading a fusion-and-windows-specific version of the theme.
-    if (!boost::ends_with(themeName, "-fusion-windows")) {
-      auto stylesheet =
-          loadStyleSheet(themesPath, themeName + "-fusion-windows");
-      if (stylesheet.has_value()) {
-        return stylesheet;
-      }
-    }
-  } else if (QApplication::style()->name() == "windows11") {
-    // Try loading a windows11-specific version of the theme.
-    if (!boost::ends_with(themeName, "-windows11")) {
-      auto stylesheet = loadStyleSheet(themesPath, themeName + "-windows11");
-      if (stylesheet.has_value()) {
-        return stylesheet;
-      }
-    }
-  }
-#endif
-
   const auto logger = getLogger();
+
   if (logger) {
     logger->debug("Loading style sheet for the \"{}\" theme...", themeName);
   }

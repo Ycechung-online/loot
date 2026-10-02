@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -394,11 +392,6 @@ MessageContentTableWidget::MessageContentTableWidget(
 void MessageContentTableWidget::initialiseInputs(
     std::vector<MessageContent>&& nonUserMetadata,
     std::vector<MessageContent>&& userMetadata) {
-  std::map<MessageType, std::pair<QString, QVariant>> messageTypeMap = {
-      {MessageType::say, {qTranslate("Note"), QString("say")}},
-      {MessageType::warn, {qTranslate("Warning"), QString("warn")}},
-      {MessageType::error, {qTranslate("Error"), QString("error")}}};
-
   auto tableModel = new MessageContentTableModel(
       this, std::move(nonUserMetadata), std::move(userMetadata), languageMap);
 

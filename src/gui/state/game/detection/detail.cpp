@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2012 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -96,7 +94,7 @@ std::vector<GameInstall> deduplicateGameInstalls(
 
     if (duplicate == uniqueGameInstalls.end()) {
       uniqueGameInstalls.push_back(gameInstall);
-    } else {
+    } else if (logger) {
       logger->warn(
           "Discarding game install for {} installed from {} to {} as a "
           "duplicate of the install for {} installed from {} to {}",

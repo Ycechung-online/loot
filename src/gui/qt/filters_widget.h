@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -40,11 +38,11 @@ namespace loot {
 class FiltersWidget : public QFrame {
   Q_OBJECT
 public:
-  explicit FiltersWidget(QWidget *parent);
+  explicit FiltersWidget(QWidget* parent);
 
   void setGameId(const GameId gameId);
-  void setPlugins(const std::vector<std::string> &pluginNames);
-  void setGroups(const std::vector<std::string> &groupNames);
+  void setPlugins(const std::vector<std::string>& pluginNames);
+  void setGroups(const std::vector<std::string>& groupNames);
 
   void setMessageCounts(size_t hidden, size_t total);
   void setPluginCounts(size_t hidden, size_t total);
@@ -53,7 +51,7 @@ public:
 
   void showCreationClubPluginsFilter(bool show);
 
-  void setFilterStates(const LootSettings::Filters &filters);
+  void setFilterStates(const LootSettings::Filters& filters);
   LootSettings::Filters getFilterSettings() const;
 
   PluginFiltersState getPluginFiltersState() const;
@@ -65,34 +63,34 @@ signals:
   void cardContentFilterChanged(CardContentFiltersState state);
 
 private:
-  QLabel *overlapFilterLabel{new QLabel(this)};
-  QComboBox *overlapFilter{new QComboBox(this)};
-  QLabel *groupPluginsFilterLabel{new QLabel(this)};
-  QComboBox *groupPluginsFilter{new QComboBox(this)};
-  QLabel *contentFilterLabel{new QLabel(this)};
-  QLineEdit *contentFilter{new QLineEdit(this)};
-  QCheckBox *contentRegexCheckbox{new QCheckBox(this)};
-  QCheckBox *versionNumbersFilter{new QCheckBox(this)};
-  QCheckBox *crcsFilter{new QCheckBox(this)};
-  QCheckBox *bashTagsFilter{new QCheckBox(this)};
-  QCheckBox *locationsFilter{new QCheckBox(this)};
-  QCheckBox *notesFilter{new QCheckBox(this)};
-  QCheckBox *officialPluginsCleaningMessagesFilter{new QCheckBox(this)};
-  QCheckBox *pluginMessagesFilter{new QCheckBox(this)};
-  QCheckBox *inactivePluginsFilter{new QCheckBox(this)};
-  QCheckBox *messagelessPluginsFilter{new QCheckBox(this)};
-  QCheckBox *creationClubPluginsFilter{new QCheckBox(this)};
-  QCheckBox *showOnlyNewMessagesFilter{new QCheckBox(this)};
-  QCheckBox *showOnlyEmptyPluginsFilter{new QCheckBox(this)};
-  QCheckBox *showOnlyPluginsWithLoadAfterMetadataFilter{new QCheckBox(this)};
-  QCheckBox *showOnlyPluginsWithLoadAfterUserMetadataFilter{
+  QLabel* overlapFilterLabel{new QLabel(this)};
+  QComboBox* overlapFilter{new QComboBox(this)};
+  QLabel* groupPluginsFilterLabel{new QLabel(this)};
+  QComboBox* groupPluginsFilter{new QComboBox(this)};
+  QLabel* contentFilterLabel{new QLabel(this)};
+  QLineEdit* contentFilter{new QLineEdit(this)};
+  QCheckBox* contentRegexCheckbox{new QCheckBox(this)};
+  QCheckBox* versionNumbersFilter{new QCheckBox(this)};
+  QCheckBox* crcsFilter{new QCheckBox(this)};
+  QCheckBox* bashTagsFilter{new QCheckBox(this)};
+  QCheckBox* locationsFilter{new QCheckBox(this)};
+  QCheckBox* notesFilter{new QCheckBox(this)};
+  QCheckBox* officialPluginsCleaningMessagesFilter{new QCheckBox(this)};
+  QCheckBox* pluginMessagesFilter{new QCheckBox(this)};
+  QCheckBox* inactivePluginsFilter{new QCheckBox(this)};
+  QCheckBox* messagelessPluginsFilter{new QCheckBox(this)};
+  QCheckBox* creationClubPluginsFilter{new QCheckBox(this)};
+  QCheckBox* showOnlyNewMessagesFilter{new QCheckBox(this)};
+  QCheckBox* showOnlyEmptyPluginsFilter{new QCheckBox(this)};
+  QCheckBox* showOnlyPluginsWithLoadAfterMetadataFilter{new QCheckBox(this)};
+  QCheckBox* showOnlyPluginsWithLoadAfterUserMetadataFilter{
       new QCheckBox(this)};
-  QCheckBox *showOnlyPluginsWithoutLoadOrderMetadataFilter{new QCheckBox(this)};
-  QCheckBox *showOnlyWarningsAndErrorsFilter{new QCheckBox(this)};
-  QLabel *hiddenPluginsLabel{new QLabel(this)};
-  QLabel *hiddenPluginsCountLabel{new QLabel(this)};
-  QLabel *hiddenMessagesLabel{new QLabel(this)};
-  QLabel *hiddenMessagesCountLabel{new QLabel(this)};
+  QCheckBox* showOnlyPluginsWithoutLoadOrderMetadataFilter{new QCheckBox(this)};
+  QCheckBox* showOnlyWarningsAndErrorsFilter{new QCheckBox(this)};
+  QLabel* hiddenPluginsLabel{new QLabel(this)};
+  QLabel* hiddenPluginsCountLabel{new QLabel(this)};
+  QLabel* hiddenMessagesLabel{new QLabel(this)};
+  QLabel* hiddenMessagesCountLabel{new QLabel(this)};
 
   LootSettings::Filters warningsAndErrorFilterMemory;
   GameId gameId{GameId::tes3};
@@ -103,8 +101,8 @@ private:
 
   bool updateWarningsAndErrorsFilterState();
 
-  static void setComboBoxItems(QComboBox *comboBox,
-                               const std::vector<std::string> &items);
+  static void setComboBoxItems(QComboBox* comboBox,
+                               const std::vector<std::string>& items);
 
 private slots:
   void on_overlapFilter_activated();

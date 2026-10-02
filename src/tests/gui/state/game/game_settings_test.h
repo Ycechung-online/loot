@@ -1,26 +1,26 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2024 Dirk Stolle
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_GAME_GAME_SETTINGS_TEST
 #define LOOT_TESTS_GUI_STATE_GAME_GAME_SETTINGS_TEST
@@ -58,11 +58,8 @@ TEST_P(GetDefaultMasterlistUrlTest, shouldNotThrowForAnyValidGameId) {
   EXPECT_NO_THROW(getDefaultMasterlistUrl(GetParam()));
 }
 
-class GameSettingsTest : public CommonGameTestFixture,
-                         public testing::WithParamInterface<GameId> {
+class GameSettingsTest : public testing::TestWithParam<GameId> {
 protected:
-  GameSettingsTest() : CommonGameTestFixture(GetParam()) {}
-
   GameSettings settings_;
 };
 
@@ -110,7 +107,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Fallout3.esm", settings_.getMasterFilename());
       EXPECT_EQ(0.94f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/fallout3/v0.26/"
+          "https://raw.githubusercontent.com/loot/fallout3/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -119,7 +116,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("FalloutNV.esm", settings_.getMasterFilename());
       EXPECT_EQ(1.32f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/falloutnv/v0.26/"
+          "https://raw.githubusercontent.com/loot/falloutnv/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -128,7 +125,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Fallout4.esm", settings_.getMasterFilename());
       EXPECT_EQ(0.95f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/fallout4/v0.26/"
+          "https://raw.githubusercontent.com/loot/fallout4/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -138,7 +135,7 @@ TEST_P(GameSettingsTest,
       // TODO: Get the real value off someone who owns Fallout 4 VR.
       EXPECT_EQ(0.95f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/fallout4/v0.26/"
+          "https://raw.githubusercontent.com/loot/fallout4/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -147,7 +144,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Morrowind.esm", settings_.getMasterFilename());
       EXPECT_EQ(1.2f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/morrowind/v0.26/"
+          "https://raw.githubusercontent.com/loot/morrowind/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -156,7 +153,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Oblivion.esm", settings_.getMasterFilename());
       EXPECT_EQ(0.8f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/oblivion/v0.26/"
+          "https://raw.githubusercontent.com/loot/oblivion/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -165,7 +162,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Skyrim.esm", settings_.getMasterFilename());
       EXPECT_EQ(0.94f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/skyrim/v0.26/masterlist.yaml",
+          "https://raw.githubusercontent.com/loot/skyrim/v0.29/masterlist.yaml",
           settings_.getMasterlistSource());
       break;
     case GameId::tes5se:
@@ -173,7 +170,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Skyrim.esm", settings_.getMasterFilename());
       EXPECT_EQ(1.7f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/skyrimse/v0.26/"
+          "https://raw.githubusercontent.com/loot/skyrimse/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -183,7 +180,7 @@ TEST_P(GameSettingsTest,
       // TODO: Get the real value off someone who owns Skyrim VR.
       EXPECT_EQ(1.7f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/skyrimse/v0.26/"
+          "https://raw.githubusercontent.com/loot/skyrimse/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -192,7 +189,7 @@ TEST_P(GameSettingsTest,
       EXPECT_EQ("Oblivion.esm", settings_.getMasterFilename());
       EXPECT_EQ(0.8f, settings_.getMinimumHeaderVersion());
       EXPECT_EQ(
-          "https://raw.githubusercontent.com/loot/oblivion/v0.26/"
+          "https://raw.githubusercontent.com/loot/oblivion/v0.29/"
           "masterlist.yaml",
           settings_.getMasterlistSource());
       break;
@@ -288,9 +285,8 @@ TEST_P(
   EXPECT_FALSE(settings_.hasHiddenGeneralMessages());
 }
 
-TEST_P(
-    GameSettingsTest,
-    hasHiddenGeneralMessageShouldBeTrueIfThereIsAMessageWithoutAPluginName) {
+TEST_P(GameSettingsTest,
+       hasHiddenGeneralMessageShouldBeTrueIfThereIsAMessageWithoutAPluginName) {
   settings_.hideMessage("", "plugin message");
 
   EXPECT_TRUE(settings_.hasHiddenGeneralMessages());
@@ -308,7 +304,8 @@ TEST_P(
   EXPECT_FALSE(settings_.pluginHasHiddenMessages("plugin name"));
 }
 
-TEST_P(GameSettingsTest,
+TEST_P(
+    GameSettingsTest,
     pluginHasHiddenMessagesShouldBeTrueIfThereIsAMessageWithTheGivenPluginName) {
   std::vector<HiddenMessage> messages{
       HiddenMessage{std::nullopt, "general message"},

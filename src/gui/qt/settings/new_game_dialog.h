@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -37,16 +35,16 @@ namespace loot {
 class NewGameDialog : public QDialog {
   Q_OBJECT
 public:
-  explicit NewGameDialog(QWidget *parent);
+  explicit NewGameDialog(QWidget* parent);
 
   QString getGameName() const;
   QString getBaseGame() const;
 
 private:
-  QLabel *nameLabel{new QLabel(this)};
-  QLabel *baseGameLabel{new QLabel(this)};
-  QLineEdit *nameInput{new QLineEdit(this)};
-  QComboBox *baseGameComboBox{new QComboBox(this)};
+  QLabel* nameLabel{new QLabel(this)};
+  QLabel* baseGameLabel{new QLabel(this)};
+  QLineEdit* nameInput{new QLineEdit(this)};
+  QComboBox* baseGameComboBox{new QComboBox(this)};
 
   void setupUi();
   void translateUi();

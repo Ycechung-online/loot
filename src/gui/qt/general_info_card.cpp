@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -34,6 +32,29 @@
 namespace loot {
 GeneralInfoCard::GeneralInfoCard(QWidget* parent) : Card(parent, false) {
   setupUi();
+}
+
+void GeneralInfoCard::setContent(const GeneralInformation& generalInfo,
+                                 const GeneralInformationCounters& counters,
+                                 bool hasHiddenMessages) {
+  setShowSeparateLightPluginCount(generalInfo.gameSupportsLightPlugins);
+  setShowSeparateMediumPluginCount(generalInfo.gameSupportsMediumPlugins);
+  setMasterlistInfo(generalInfo.masterlistRevision);
+  setPreludeInfo(generalInfo.preludeRevision);
+  setMessageCounts(counters.warnings, counters.errors, counters.totalMessages);
+  setPluginCounts(counters.activeLight,
+                  counters.activeMedium,
+                  counters.activeFull,
+                  counters.dirty,
+                  counters.totalPlugins);
+  setGeneralMessages(generalInfo.generalMessages);
+  setHasHiddenMessages(hasHiddenMessages);
+
+  layout()->activate();
+}
+
+void GeneralInfoCard::setIcons() {
+  setIcon(hasHiddenMessagesLabel, IconFactory::getHideMessagesIcon());
 }
 
 void GeneralInfoCard::setMasterlistInfo(FileRevisionSummary masterlistInfo) {
@@ -71,13 +92,7 @@ void GeneralInfoCard::setPluginCounts(size_t activeLight,
 
 void GeneralInfoCard::setGeneralMessages(
     const std::vector<SourcedMessage>& messages) {
-  if (!messages.empty()) {
-    messagesWidget->setMessages(messages);
-  }
-
-  messagesWidget->setVisible(!messages.empty());
-
-  layout()->activate();
+  messagesWidget->setMessages(messages);
 }
 
 void GeneralInfoCard::setHasHiddenMessages(bool hasHiddenMessages) {
@@ -154,8 +169,6 @@ void GeneralInfoCard::updatePluginRowsAndColumns() {
   activeLightCountLabel->setText(activeLightCountText);
 }
 
-void GeneralInfoCard::refreshMessages() { messagesWidget->refresh(); }
-
 void GeneralInfoCard::setupUi() {
   static constexpr int TABLE_COLUMN_SPACING = 16;
   static constexpr int METADATA_LABEL_COLUMN = 0;
@@ -167,7 +180,7 @@ void GeneralInfoCard::setupUi() {
 
   scaleCardHeading(*headingLabel);
 
-  setIcon(hasHiddenMessagesLabel, IconFactory::getHideMessagesIcon());
+  setIcons();
 
   hasHiddenMessagesLabel->setVisible(false);
 

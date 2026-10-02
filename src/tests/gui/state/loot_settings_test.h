@@ -1,26 +1,29 @@
 /*  LOOT
 
-A load order optimisation tool for Oblivion, Skyrim, Fallout 3 and
-Fallout: New Vegas.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
+    Copyright (C) 2021 Daniel Coelho
+    Copyright (C) 2021 IllusiveMan196
+    Copyright (C) 2021 sibir-ine
+    Copyright (C) 2024 Ilker Binzet
 
-This file is part of LOOT.
+    This file is part of LOOT.
 
-LOOT is free software: you can redistribute
-it and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
+    LOOT is free software: you can redistribute
+    it and/or modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
 
-LOOT is distributed in the hope that it will
-be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    LOOT is distributed in the hope that it will
+    be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with LOOT.  If not, see
-<https://www.gnu.org/licenses/>.
-*/
+    You should have received a copy of the GNU General Public License
+    along with LOOT.  If not, see
+    <https://www.gnu.org/licenses/>.
+    */
 
 #ifndef LOOT_TESTS_GUI_STATE_LOOT_SETTINGS_TEST
 #define LOOT_TESTS_GUI_STATE_LOOT_SETTINGS_TEST
@@ -40,17 +43,14 @@ bool operator==(const LootSettings::Language& lhs,
 }
 
 namespace test {
-class LootSettingsTest : public CommonGameTestFixture {
+class LootSettingsTest : public FilesystemTest {
 protected:
   LootSettingsTest() :
-      CommonGameTestFixture(GameId::tes5),
-      settingsFile_(lootDataPath / "settings_.toml"),
-      unicodeSettingsFile_(lootDataPath / "Andr\xc3\xa9_settings_.toml"),
+      settingsFile_(rootPath_ / "settings_.toml"),
+      unicodeSettingsFile_(rootPath_ / "Andr\xc3\xa9_settings_.toml"),
       gitRepoPath_(getTempPath()) {}
 
   void SetUp() override {
-    CommonGameTestFixture::SetUp();
-
     std::filesystem::create_directories(gitRepoPath_ / ".git");
 
     touch(gitRepoPath_ / "masterlist.yaml");
@@ -62,7 +62,7 @@ protected:
   void TearDown() override {
     std::filesystem::remove_all(gitRepoPath_);
 
-    CommonGameTestFixture::TearDown();
+    FilesystemTest::TearDown();
   }
 
   void checkoutBranch(const std::string& branch) {
@@ -105,7 +105,7 @@ TEST_F(LootSettingsTest, defaultConstructorShouldSetDefaultValues) {
   EXPECT_FALSE(settings_.getFilters().showOnlyPluginsWithLoadAfterMetadata);
   EXPECT_FALSE(settings_.getFilters().showOnlyPluginsWithLoadAfterUserMetadata);
   EXPECT_FALSE(settings_.getFilters().showOnlyPluginsWithoutLoadOrderMetadata);
-  EXPECT_EQ("https://raw.githubusercontent.com/loot/prelude/v0.26/prelude.yaml",
+  EXPECT_EQ("https://raw.githubusercontent.com/loot/prelude/v0.29/prelude.yaml",
             settings_.getPreludeSource());
   EXPECT_TRUE(settings_.getGameSettings().empty());
 
@@ -163,6 +163,13 @@ TEST_F(LootSettingsTest, loadingShouldReadFromATomlFile) {
       << "right = 8" << endl
       << "maximised = true" << endl
       << endl
+      << "[compareLoadOrdersWindow]" << endl
+      << "top = 9" << endl
+      << "bottom = 10" << endl
+      << "left = 11" << endl
+      << "right = 12" << endl
+      << "maximised = true" << endl
+      << endl
       << "[[games]]" << endl
       << "name = \"Game Name\"" << endl
       << "type = \"Oblivion\"" << endl
@@ -201,6 +208,13 @@ TEST_F(LootSettingsTest, loadingShouldReadFromATomlFile) {
   EXPECT_EQ(7, settings_.getGroupsEditorWindowPosition().value().left);
   EXPECT_EQ(8, settings_.getGroupsEditorWindowPosition().value().right);
   EXPECT_TRUE(settings_.getGroupsEditorWindowPosition().value().maximised);
+
+  ASSERT_TRUE(settings_.getCompareLoadOrdersWindowPosition().has_value());
+  EXPECT_EQ(9, settings_.getCompareLoadOrdersWindowPosition().value().top);
+  EXPECT_EQ(10, settings_.getCompareLoadOrdersWindowPosition().value().bottom);
+  EXPECT_EQ(11, settings_.getCompareLoadOrdersWindowPosition().value().left);
+  EXPECT_EQ(12, settings_.getCompareLoadOrdersWindowPosition().value().right);
+  EXPECT_TRUE(settings_.getCompareLoadOrdersWindowPosition().value().maximised);
 
   EXPECT_EQ("Game Name", settings_.getGameSettings().at(0).getName());
 
@@ -258,7 +272,21 @@ TEST_F(LootSettingsTest, loadShouldEnableFiltersForFiltersEnabledInTomlFile) {
 }
 
 TEST_F(LootSettingsTest, loadShouldDisableFiltersForFiltersDisabledInTomlFile) {
-  LootSettings::Filters filters{true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
+  LootSettings::Filters filters{true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true};
   settings_.storeFilters(filters);
 
   using std::endl;
@@ -307,8 +335,7 @@ TEST_F(LootSettingsTest,
 
   using std::endl;
   std::ofstream out(settingsFile_);
-  out << "[filters]" << endl
-      << "hideCRCs = true" << endl;
+  out << "[filters]" << endl << "hideCRCs = true" << endl;
   out.close();
 
   settings_.load(settingsFile_);
@@ -385,7 +412,8 @@ TEST_F(LootSettingsTest, loadingShouldMapGameIds) {
   EXPECT_EQ(GameId::fo4vr, settings_.getGameSettings()[11].getId());
   EXPECT_EQ(GameId::starfield, settings_.getGameSettings()[12].getId());
   EXPECT_EQ(GameId::openmw, settings_.getGameSettings()[13].getId());
-  EXPECT_EQ(GameId::oblivionRemastered, settings_.getGameSettings()[14].getId());
+  EXPECT_EQ(GameId::oblivionRemastered,
+            settings_.getGameSettings()[14].getId());
 }
 
 TEST_F(LootSettingsTest, loadingShouldSkipGameIfGameIdAndTypeAreNotPresent) {
@@ -464,13 +492,13 @@ TEST_F(LootSettingsTest,
        loadingShouldMapOblivonTypeToNehrimIfInstallPathIsANehrimInstall) {
   using std::endl;
 
-  touch(gamePath / "NehrimLauncher.exe");
+  touch(rootPath_ / "NehrimLauncher.exe");
 
   std::ofstream out(settingsFile_);
   out << "[[games]]" << endl
       << "type = \"Oblivion\"" << endl
       << "folder = \"\"" << endl
-      << "path = \"" << escapePath(gamePath) << "\"" << endl;
+      << "path = \"" << escapePath(rootPath_) << "\"" << endl;
   out.close();
 
   settings_.load(settingsFile_);
@@ -546,13 +574,13 @@ TEST_F(LootSettingsTest,
        loadingShouldMapSkyrimTypeToEnderalIfInstallPathIsAnEnderalInstall) {
   using std::endl;
 
-  touch(gamePath / "Enderal Launcher.exe");
+  touch(rootPath_ / "Enderal Launcher.exe");
 
   std::ofstream out(settingsFile_);
   out << "[[games]]" << endl
       << "type = \"Skyrim\"" << endl
       << "folder = \"\"" << endl
-      << "path = \"" << escapePath(gamePath) << "\"" << endl;
+      << "path = \"" << escapePath(rootPath_) << "\"" << endl;
   out.close();
 
   settings_.load(settingsFile_);
@@ -649,17 +677,17 @@ TEST_F(LootSettingsTest,
        loadingShouldMapSkyrimSETypeToEnderalSEIfInstallPathIsAnEnderalInstall) {
   using std::endl;
 
-  touch(gamePath / "Enderal Launcher.exe");
+  touch(rootPath_ / "Enderal Launcher.exe");
 
   std::ofstream out(settingsFile_);
   out << "[[games]]" << endl
       << "type = \"SkyrimSE\"" << endl
       << "folder = \"\"" << endl
-      << "path = \"" << escapePath(gamePath) << "\"" << endl
+      << "path = \"" << escapePath(rootPath_) << "\"" << endl
       << "[[games]]" << endl
       << "type = \"Skyrim Special Edition\"" << endl
       << "folder = \"\"" << endl
-      << "path = \"" << escapePath(gamePath) << "\"" << endl;
+      << "path = \"" << escapePath(rootPath_) << "\"" << endl;
   out.close();
 
   settings_.load(settingsFile_);
@@ -867,8 +895,9 @@ TEST_F(
   settings_.load(settingsFile_);
 
   const auto expectedSource =
-      "https://raw.githubusercontent.com/loot/oblivion/v0.26/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+      "https://raw.githubusercontent.com/loot/oblivion/v0.29/masterlist.yaml";
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -887,8 +916,9 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   const auto expectedSource =
-      "https://raw.githubusercontent.com/loot/skyrimse/v0.26/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+      "https://raw.githubusercontent.com/loot/skyrimse/v0.29/masterlist.yaml";
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -909,7 +939,8 @@ TEST_F(
 
   const auto expectedSource =
       "https://raw.githubusercontent.com/loot/oblivion/custom/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -931,7 +962,8 @@ TEST_F(
   const auto expectedSource =
       "https://raw.githubusercontent.com/not-loot/skyrimse/v0.17/"
       "masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest, loadingShouldNotMigratePathMasterlistSources) {
@@ -947,7 +979,8 @@ TEST_F(LootSettingsTest, loadingShouldNotMigratePathMasterlistSources) {
   settings_.load(settingsFile_);
 
   const auto expectedSource = "C:\\masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -966,7 +999,8 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   auto expectedSource = "masterlist-source";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -986,7 +1020,8 @@ TEST_F(
   auto expectedSource =
       "https://raw.githubusercontent.com/loot/oblivion/custom/"
       "masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1003,9 +1038,10 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/oblivion-foo/v0.26/"
+      "https://raw.githubusercontent.com/loot/oblivion-foo/v0.29/"
       "masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1022,7 +1058,8 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   auto expectedSource = GameSettings(GameId::tes4, "").getMasterlistSource();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1043,7 +1080,8 @@ TEST_F(
 
   auto expectedSource =
       "https://raw.githubusercontent.com/loot/oblivion/foo/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1062,7 +1100,8 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource = GameSettings(GameId::tes4, "").getMasterlistSource();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1074,7 +1113,7 @@ TEST_F(LootSettingsTest,
       << "type = \"Skyrim VR\"" << endl
       << "folder = \"Skyrim VR\"" << endl
       << "masterlistSource = "
-         "\"https://raw.githubusercontent.com/loot/skyrimvr/v0.26/"
+         "\"https://raw.githubusercontent.com/loot/skyrimvr/v0.29/"
          "masterlist.yaml\""
       << endl;
   out.close();
@@ -1082,8 +1121,9 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/skyrimse/v0.26/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+      "https://raw.githubusercontent.com/loot/skyrimse/v0.29/masterlist.yaml";
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1102,7 +1142,8 @@ TEST_F(LootSettingsTest,
 
   auto expectedSource =
       "https://raw.githubusercontent.com/loot/skyrimse/foo/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1121,7 +1162,8 @@ TEST_F(LootSettingsTest,
 
   auto expectedSource =
       "https://raw.githubusercontent.com/loot/skyrim-vr/foo/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1133,7 +1175,7 @@ TEST_F(LootSettingsTest,
       << "type = \"Fallout4VR\"" << endl
       << "folder = \"Fallout4VR\"" << endl
       << "masterlistSource = "
-         "\"https://raw.githubusercontent.com/loot/fallout4vr/v0.26/"
+         "\"https://raw.githubusercontent.com/loot/fallout4vr/v0.29/"
          "masterlist.yaml\""
       << endl;
   out.close();
@@ -1141,8 +1183,9 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/fallout4/v0.26/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+      "https://raw.githubusercontent.com/loot/fallout4/v0.29/masterlist.yaml";
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(LootSettingsTest,
@@ -1161,7 +1204,8 @@ TEST_F(LootSettingsTest,
 
   auto expectedSource =
       "https://raw.githubusercontent.com/loot/fallout4/foo/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1181,7 +1225,8 @@ TEST_F(
 
   auto expectedSource =
       "https://raw.githubusercontent.com/loot/fallout4-vr/foo/masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1202,7 +1247,8 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource = (gitRepoPath_ / "masterlist.yaml").u8string();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1224,7 +1270,8 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource = GameSettings(GameId::fo4vr, "").getMasterlistSource();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1246,7 +1293,8 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource = GameSettings(GameId::fo4vr, "").getMasterlistSource();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1267,7 +1315,8 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource = (gitRepoPath_ / "masterlist.yaml").u8string();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1286,7 +1335,8 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource = GameSettings(GameId::fo4vr, "").getMasterlistSource();
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1307,7 +1357,8 @@ TEST_F(
   auto expectedSource =
       "https://raw.githubusercontent.com/my-forks/fallout4-vr/custom/"
       "masterlist.yaml";
-  EXPECT_EQ(expectedSource, settings_.getGameSettings()[0].getMasterlistSource());
+  EXPECT_EQ(expectedSource,
+            settings_.getGameSettings()[0].getMasterlistSource());
 }
 
 TEST_F(
@@ -1327,7 +1378,7 @@ TEST_F(
   settings_.load(settingsFile_);
 
   const auto expectedSource =
-      "https://raw.githubusercontent.com/loot/prelude/v0.26/prelude.yaml";
+      "https://raw.githubusercontent.com/loot/prelude/v0.29/prelude.yaml";
   EXPECT_EQ(expectedSource, settings_.getPreludeSource());
 }
 
@@ -1446,7 +1497,7 @@ TEST_F(LootSettingsTest,
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/prelude/v0.26/"
+      "https://raw.githubusercontent.com/loot/prelude/v0.29/"
       "prelude.yaml";
   EXPECT_EQ(expectedSource, settings_.getPreludeSource());
 }
@@ -1483,7 +1534,7 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/prelude/v0.26/prelude.yaml";
+      "https://raw.githubusercontent.com/loot/prelude/v0.29/prelude.yaml";
   EXPECT_EQ(expectedSource, settings_.getPreludeSource());
 }
 
@@ -1502,7 +1553,7 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/prelude/v0.26/prelude.yaml";
+      "https://raw.githubusercontent.com/loot/prelude/v0.29/prelude.yaml";
   EXPECT_EQ(expectedSource, settings_.getPreludeSource());
 }
 
@@ -1535,7 +1586,7 @@ TEST_F(
   settings_.load(settingsFile_);
 
   auto expectedSource =
-      "https://raw.githubusercontent.com/loot/prelude/v0.26/prelude.yaml";
+      "https://raw.githubusercontent.com/loot/prelude/v0.29/prelude.yaml";
   EXPECT_EQ(expectedSource, settings_.getPreludeSource());
 }
 
@@ -1630,11 +1681,18 @@ TEST_F(LootSettingsTest, saveShouldWriteSettingsToPassedTomlFile) {
   windowPosition.maximised = true;
 
   LootSettings::WindowPosition groupsEditorWindowPosition;
-  groupsEditorWindowPosition.top = 1;
-  groupsEditorWindowPosition.bottom = 2;
-  groupsEditorWindowPosition.left = 3;
-  groupsEditorWindowPosition.right = 4;
+  groupsEditorWindowPosition.top = 5;
+  groupsEditorWindowPosition.bottom = 6;
+  groupsEditorWindowPosition.left = 7;
+  groupsEditorWindowPosition.right = 8;
   groupsEditorWindowPosition.maximised = true;
+
+  LootSettings::WindowPosition compareLoadOrdersWindowPosition;
+  compareLoadOrdersWindowPosition.top = 9;
+  compareLoadOrdersWindowPosition.bottom = 10;
+  compareLoadOrdersWindowPosition.left = 11;
+  compareLoadOrdersWindowPosition.right = 12;
+  compareLoadOrdersWindowPosition.maximised = true;
 
   std::vector<HiddenMessage> hiddenMessages{
       HiddenMessage{std::nullopt, "general message"},
@@ -1661,6 +1719,8 @@ TEST_F(LootSettingsTest, saveShouldWriteSettingsToPassedTomlFile) {
 
   settings_.storeMainWindowPosition(windowPosition);
   settings_.storeGroupsEditorWindowPosition(groupsEditorWindowPosition);
+  settings_.storeCompareLoadOrdersWindowPosition(
+      compareLoadOrdersWindowPosition);
   settings_.storeGameSettings(games);
   settings_.storeFilters(filters);
 
@@ -1686,17 +1746,25 @@ TEST_F(LootSettingsTest, saveShouldWriteSettingsToPassedTomlFile) {
   EXPECT_TRUE(settings.getMainWindowPosition().value().maximised);
 
   ASSERT_TRUE(settings_.getGroupsEditorWindowPosition().has_value());
-  EXPECT_EQ(1, settings_.getGroupsEditorWindowPosition().value().top);
-  EXPECT_EQ(2, settings.getGroupsEditorWindowPosition().value().bottom);
-  EXPECT_EQ(3, settings.getGroupsEditorWindowPosition().value().left);
-  EXPECT_EQ(4, settings.getGroupsEditorWindowPosition().value().right);
+  EXPECT_EQ(5, settings_.getGroupsEditorWindowPosition().value().top);
+  EXPECT_EQ(6, settings.getGroupsEditorWindowPosition().value().bottom);
+  EXPECT_EQ(7, settings.getGroupsEditorWindowPosition().value().left);
+  EXPECT_EQ(8, settings.getGroupsEditorWindowPosition().value().right);
   EXPECT_TRUE(settings.getGroupsEditorWindowPosition().value().maximised);
+
+  ASSERT_TRUE(settings_.getCompareLoadOrdersWindowPosition().has_value());
+  EXPECT_EQ(9, settings_.getCompareLoadOrdersWindowPosition().value().top);
+  EXPECT_EQ(10, settings.getCompareLoadOrdersWindowPosition().value().bottom);
+  EXPECT_EQ(11, settings.getCompareLoadOrdersWindowPosition().value().left);
+  EXPECT_EQ(12, settings.getCompareLoadOrdersWindowPosition().value().right);
+  EXPECT_TRUE(settings.getCompareLoadOrdersWindowPosition().value().maximised);
 
   EXPECT_EQ(games[0].getId(), settings.getGameSettings().at(0).getId());
   EXPECT_EQ(games[0].getName(), settings.getGameSettings().at(0).getName());
   EXPECT_EQ(games[0].getMinimumHeaderVersion(),
             settings.getGameSettings().at(0).getMinimumHeaderVersion());
-  EXPECT_EQ(hiddenMessages, settings.getGameSettings().at(0).getHiddenMessages());
+  EXPECT_EQ(hiddenMessages,
+            settings.getGameSettings().at(0).getHiddenMessages());
 
   EXPECT_EQ(filters.hideBashTags, settings.getFilters().hideBashTags);
   EXPECT_EQ(filters.hideCRCs, settings.getFilters().hideCRCs);
@@ -1831,6 +1899,21 @@ TEST_F(LootSettingsTest,
   ASSERT_TRUE(settings_.getGroupsEditorWindowPosition().has_value());
   LootSettings::WindowPosition actualPosition =
       settings_.getGroupsEditorWindowPosition().value();
+  EXPECT_EQ(expectedPosition.top, actualPosition.top);
+  EXPECT_EQ(expectedPosition.bottom, actualPosition.bottom);
+  EXPECT_EQ(expectedPosition.left, actualPosition.left);
+  EXPECT_EQ(expectedPosition.right, actualPosition.right);
+}
+
+TEST_F(LootSettingsTest,
+       storeCompareLoadOrdersWindowPositionShouldReplaceExistingValue) {
+  LootSettings::WindowPosition expectedPosition;
+  expectedPosition.top = 1;
+  settings_.storeCompareLoadOrdersWindowPosition(expectedPosition);
+
+  ASSERT_TRUE(settings_.getCompareLoadOrdersWindowPosition().has_value());
+  LootSettings::WindowPosition actualPosition =
+      settings_.getCompareLoadOrdersWindowPosition().value();
   EXPECT_EQ(expectedPosition.top, actualPosition.top);
   EXPECT_EQ(expectedPosition.bottom, actualPosition.bottom);
   EXPECT_EQ(expectedPosition.left, actualPosition.left);

@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2014 WrinklyNinja
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -57,7 +55,8 @@ static const std::set<std::string> OLD_DEFAULT_BRANCHES({"master",
                                                          "v0.15",
                                                          "v0.17",
                                                          "v0.18",
-                                                         "v0.21"});
+                                                         "v0.21",
+                                                         "v0.26"});
 
 static const std::regex GITHUB_REPO_URL_REGEX =
     std::regex(R"(^https://github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$)",
@@ -769,6 +768,16 @@ std::optional<LootSettings::WindowPosition> windowPositionFromToml(
 
   return std::nullopt;
 }
+
+void loadWindowPosition(const toml::node_view<const toml::node>& toml,
+                        std::optional<LootSettings::WindowPosition>& setting) {
+  if (toml.is_table()) {
+    const auto windowPosition = windowPositionFromToml(*toml.as_table());
+    if (windowPosition.has_value()) {
+      setting.emplace(windowPosition.value());
+    }
+  }
+}
 }
 
 namespace loot {
@@ -866,22 +875,13 @@ void LootSettings::load(const std::filesystem::path& file) {
     }
   }
 
-  const auto window = settings["window"];
-  if (window.is_table()) {
-    const auto windowPosition = windowPositionFromToml(*window.as_table());
-    if (windowPosition.has_value()) {
-      mainWindowPosition_ = windowPosition.value();
-    }
-  }
+  loadWindowPosition(settings["window"], mainWindowPosition_);
 
-  const auto groupsEditorWindow = settings["groupsEditorWindow"];
-  if (groupsEditorWindow.is_table()) {
-    const auto groupsEditorWindowPosition =
-        windowPositionFromToml(*groupsEditorWindow.as_table());
-    if (groupsEditorWindowPosition.has_value()) {
-      groupsEditorWindowPosition_ = groupsEditorWindowPosition.value();
-    }
-  }
+  loadWindowPosition(settings["groupsEditorWindow"],
+                     groupsEditorWindowPosition_);
+
+  loadWindowPosition(settings["compareLoadOrdersWindow"],
+                     compareLoadOrdersWindowPosition_);
 
   const auto games = settings["games"];
   if (games.is_array_of_tables()) {
@@ -1006,6 +1006,12 @@ void LootSettings::save(const std::filesystem::path& file) {
     const auto window =
         windowPositionToToml(groupsEditorWindowPosition_.value());
     root.insert("groupsEditorWindow", window);
+  }
+
+  if (compareLoadOrdersWindowPosition_.has_value()) {
+    const auto window =
+        windowPositionToToml(compareLoadOrdersWindowPosition_.value());
+    root.insert("compareLoadOrdersWindow", window);
   }
 
   if (!gameSettings_.empty()) {
@@ -1149,6 +1155,13 @@ LootSettings::getGroupsEditorWindowPosition() const {
   return groupsEditorWindowPosition_;
 }
 
+std::optional<LootSettings::WindowPosition>
+LootSettings::getCompareLoadOrdersWindowPosition() const {
+  lock_guard<recursive_mutex> guard(mutex_);
+
+  return compareLoadOrdersWindowPosition_;
+}
+
 const std::vector<GameSettings>& LootSettings::getGameSettings() const {
   lock_guard<recursive_mutex> guard(mutex_);
 
@@ -1245,6 +1258,13 @@ void LootSettings::storeGroupsEditorWindowPosition(
   lock_guard<recursive_mutex> guard(mutex_);
 
   groupsEditorWindowPosition_ = position;
+}
+
+void LootSettings::storeCompareLoadOrdersWindowPosition(
+    const WindowPosition& position) {
+  lock_guard<recursive_mutex> guard(mutex_);
+
+  compareLoadOrdersWindowPosition_ = position;
 }
 
 void LootSettings::storeGameSettings(

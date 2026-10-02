@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -36,41 +34,44 @@
 
 namespace loot {
 PluginEditorWidget::PluginEditorWidget(
-    QWidget *parent,
-    const std::vector<LootSettings::Language> &languages,
-    const std::string &language) :
+    QWidget* parent,
+    const std::vector<LootSettings::Language>& languages,
+    const std::string& language) :
     QWidget(parent), languages(&languages), language(language) {
   setupUi();
 }
 
-void PluginEditorWidget::setLanguage(std::string &&newLanguage) {
+void PluginEditorWidget::setLanguage(std::string&& newLanguage) {
   language = std::move(newLanguage);
 }
 
 void PluginEditorWidget::setBashTagCompletions(
-    const std::vector<std::string> &knownBashTags) {
+    const std::vector<std::string>& knownBashTags) {
   bashTagCompletions.clear();
 
-  for (const auto &bashTag : knownBashTags) {
+  for (const auto& bashTag : knownBashTags) {
     bashTagCompletions.append(QString::fromStdString(bashTag));
   }
 }
 
 void PluginEditorWidget::setFilenameCompletions(
-    const std::vector<std::string> &knownFilenames) {
-  filenameCompletions.clear();
+    const std::vector<std::string>& knownFilenames) {
+  allFilenameCompletions.clear();
 
-  for (const auto &filename : knownFilenames) {
-    filenameCompletions.append(QString::fromStdString(filename));
+  for (const auto& filename : knownFilenames) {
+    allFilenameCompletions.append(QString::fromStdString(filename));
   }
 }
 
 void PluginEditorWidget::initialiseInputs(
-    const std::vector<std::string> &groups,
-    const std::string &pluginName,
-    const std::optional<PluginMetadata> &nonUserMetadata,
-    const std::optional<PluginMetadata> &userMetadata) {
+    const std::vector<std::string>& groups,
+    const std::string& pluginName,
+    const std::optional<PluginMetadata>& nonUserMetadata,
+    const std::optional<PluginMetadata>& userMetadata) {
   pluginLabel->setText(QString::fromStdString(pluginName));
+
+  filenameCompletions = allFilenameCompletions;
+  filenameCompletions.removeOne(pluginLabel->text());
 
   std::optional<std::string> nonUserGroupName;
   std::optional<std::string> userGroupName;
@@ -229,7 +230,7 @@ PluginMetadata PluginEditorWidget::getUserMetadata() {
 }
 
 void PluginEditorWidget::connectTableRowCountChangedSignal(
-    const BaseTableTab *tableTab) const {
+    const BaseTableTab* tableTab) const {
   connect(tableTab,
           &BaseTableTab::tableRowCountChanged,
           this,
@@ -249,7 +250,7 @@ void PluginEditorWidget::on_dialogButtons_rejected() {
 }
 
 void PluginEditorWidget::handleTabContentChanged(bool hasUserMetadata) {
-  const auto tab = qobject_cast<QWidget *>(sender());
+  const auto tab = qobject_cast<QWidget*>(sender());
 
   // tabWidget is null for the message content dialog.
   const auto tabIndex = tabs->indexOf(tab);

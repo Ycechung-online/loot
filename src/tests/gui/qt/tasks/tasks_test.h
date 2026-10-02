@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2022    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -36,11 +34,11 @@
 
 namespace loot {
 namespace test {
-static constexpr const char* GENERIC_QUERY_ERROR_MESSAGE =
+inline constexpr const char* GENERIC_QUERY_ERROR_MESSAGE =
     "Oh no, something went wrong! You can check your LOOTDebugLog.txt (you can "
     "get to it through the main menu) for more information.";
 
-static constexpr int THREAD_TIMEOUT_MS = 50;
+inline constexpr int THREAD_TIMEOUT_MS = 50;
 
 class TestQuery : public Query {
 public:

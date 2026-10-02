@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2022    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -37,10 +35,10 @@ public slots:
   void execute() override;
 
 private:
-  QNetworkAccessManager *networkAccessManager{nullptr};
+  QNetworkAccessManager* networkAccessManager{nullptr};
   std::optional<QDate> tagCommitDate;
 
-  void sendHttpRequest(const std::string &url,
+  void sendHttpRequest(const std::string& url,
                        void (CheckForUpdateTask::*onFinished)());
 
 private slots:

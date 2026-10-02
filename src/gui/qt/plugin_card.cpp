@@ -1,10 +1,8 @@
 /*  LOOT
 
-    A load order optimisation tool for
-    Morrowind, Oblivion, Skyrim, Skyrim Special Edition, Skyrim VR,
-    Fallout 3, Fallout: New Vegas, Fallout 4 and Fallout 4 VR.
+    A modding utility for Starfield and some Elder Scrolls and Fallout games.
 
-    Copyright (C) 2021    Oliver Hamlet
+    Copyright (C) 2013-2026 Oliver Hamlet
 
     This file is part of LOOT.
 
@@ -58,7 +56,6 @@ void PluginCard::setIcons() {
   setIcon(isActiveLabel, IconFactory::getIsActiveIcon());
   setIcon(masterFileLabel, IconFactory::getMasterFileIcon());
   setIcon(blueprintMasterLabel, IconFactory::getBlueprintMasterIcon());
-  setIcon(lightPluginLabel, IconFactory::getLightPluginIcon());
   setIcon(lightPluginLabel, IconFactory::getLightPluginIcon());
   setIcon(mediumPluginLabel, IconFactory::getMediumPluginIcon());
   setIcon(emptyPluginLabel, IconFactory::getEmptyPluginIcon());
@@ -177,8 +174,6 @@ void PluginCard::setSearchResult(bool isSearchResult,
     style()->polish(this);
   }
 }
-
-void PluginCard::refreshMessages() { messagesWidget->refresh(); }
 
 void PluginCard::setupUi() {
   crcLabel->setObjectName("plugin-crc");
